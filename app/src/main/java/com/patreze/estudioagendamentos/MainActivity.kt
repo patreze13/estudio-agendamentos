@@ -13,7 +13,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.Gravity
-import android.view.View
+import android.view.ViewGroup
 import android.widget.*
 import java.util.Calendar
 import java.util.Locale
@@ -38,7 +38,6 @@ class Banco(activity: Activity) : SQLiteOpenHelper(
 ) {
 
     override fun onCreate(db: SQLiteDatabase) {
-
         db.execSQL(
             """
             CREATE TABLE agendamentos (
@@ -61,10 +60,7 @@ class Banco(activity: Activity) : SQLiteOpenHelper(
         antiga: Int,
         nova: Int
     ) {
-        db.execSQL(
-            "DROP TABLE IF EXISTS agendamentos"
-        )
-
+        db.execSQL("DROP TABLE IF EXISTS agendamentos")
         onCreate(db)
     }
 }
@@ -89,32 +85,25 @@ class MainActivity : Activity() {
         telaInicial()
     }
 
-    private fun fundo(
-        cor: Int
-    ): FrameLayout {
-
+    private fun fundo(cor: Int): FrameLayout {
         return FrameLayout(this).apply {
             setBackgroundColor(cor)
         }
     }
 
     private fun tituloPrincipal(): TextView {
-
         return TextView(this).apply {
 
-            text =
-                "Agendamentos\nEstúdio Rafa Fraga"
+            text = "Agendamentos\nEstúdio Rafa Fraga"
 
             textSize = 30f
 
-            gravity =
-                Gravity.CENTER
+            gravity = Gravity.CENTER
 
-            typeface =
-                Typeface.create(
-                    "cursive",
-                    Typeface.NORMAL
-                )
+            typeface = Typeface.create(
+                "cursive",
+                Typeface.NORMAL
+            )
 
             setTextColor(
                 Color.rgb(80, 55, 90)
@@ -132,18 +121,15 @@ class MainActivity : Activity() {
     private fun tituloInterno(
         texto: String
     ): TextView {
-
         return TextView(this).apply {
 
             text = texto
 
             textSize = 26f
 
-            gravity =
-                Gravity.CENTER
+            gravity = Gravity.CENTER
 
-            typeface =
-                Typeface.DEFAULT_BOLD
+            typeface = Typeface.DEFAULT_BOLD
 
             setTextColor(
                 Color.rgb(70, 55, 75)
@@ -170,22 +156,20 @@ class MainActivity : Activity() {
 
             textSize = 15f
 
-            setTextColor(
-                Color.rgb(65, 50, 70)
-            )
+            // TEXTO DOS BOTÕES SEMPRE PRETO
+            setTextColor(Color.BLACK)
 
-            background =
-                GradientDrawable().apply {
+            background = GradientDrawable().apply {
 
-                    cornerRadius = 22f
+                cornerRadius = 22f
 
-                    setColor(
-                        if (interno)
-                            lilasClaro
-                        else
-                            Color.WHITE
-                    )
-                }
+                setColor(
+                    if (interno)
+                        lilasClaro
+                    else
+                        Color.WHITE
+                )
+            }
 
             elevation = 4f
 
@@ -217,15 +201,16 @@ class MainActivity : Activity() {
 
             hint = dica
 
-            textSize = 16f
+            // FONTE REDUZIDA PARA CABER NAS CAIXAS
+            textSize = 14f
 
             setSingleLine(false)
 
             setPadding(
                 18,
-                10,
+                8,
                 18,
-                10
+                8
             )
 
             background =
@@ -291,25 +276,19 @@ class MainActivity : Activity() {
         )
 
         conteudo.addView(
-            botao(
-                "NOVO AGENDAMENTO"
-            ) {
+            botao("NOVO AGENDAMENTO") {
                 novoAgendamento()
             }
         )
 
         conteudo.addView(
-            botao(
-                "AGENDAMENTOS"
-            ) {
+            botao("AGENDAMENTOS") {
                 listarAgendamentos()
             }
         )
 
         conteudo.addView(
-            botao(
-                "ENTREGAS"
-            ) {
+            botao("ENTREGAS") {
                 telaEntregas()
             }
         )
@@ -378,9 +357,7 @@ class MainActivity : Activity() {
         val contato =
             campo("Contato")
 
-        aplicarMascaraTelefone(
-            contato
-        )
+        aplicarMascaraTelefone(contato)
 
         val data =
             campo("Data do ensaio")
@@ -428,32 +405,21 @@ class MainActivity : Activity() {
 
         if (editar != null) {
 
-            nome.setText(
-                editar.nome
-            )
+            nome.setText(editar.nome)
 
-            contato.setText(
-                editar.contato
-            )
+            contato.setText(editar.contato)
 
-            data.setText(
-                editar.data
-            )
+            data.setText(editar.data)
 
-            horario.setText(
-                editar.horario
-            )
+            horario.setText(editar.horario)
 
-            tipo.setText(
-                editar.tipo
-            )
+            tipo.setText(editar.tipo)
 
             observacoes.setText(
                 editar.observacoes
             )
 
             if (editar.valor > 0) {
-
                 valor.setText(
                     editar.valor
                         .toInt()
@@ -462,7 +428,6 @@ class MainActivity : Activity() {
             }
 
             if (editar.sinal > 0) {
-
                 sinal.setText(
                     editar.sinal
                         .toInt()
@@ -562,45 +527,14 @@ class MainActivity : Activity() {
         val dados =
             ContentValues()
 
-        dados.put(
-            "nome",
-            nome
-        )
-
-        dados.put(
-            "contato",
-            contato
-        )
-
-        dados.put(
-            "data",
-            data
-        )
-
-        dados.put(
-            "horario",
-            horario
-        )
-
-        dados.put(
-            "tipo",
-            tipo
-        )
-
-        dados.put(
-            "observacoes",
-            observacoes
-        )
-
-        dados.put(
-            "valor",
-            valor
-        )
-
-        dados.put(
-            "sinal",
-            sinal
-        )
+        dados.put("nome", nome)
+        dados.put("contato", contato)
+        dados.put("data", data)
+        dados.put("horario", horario)
+        dados.put("tipo", tipo)
+        dados.put("observacoes", observacoes)
+        dados.put("valor", valor)
+        dados.put("sinal", sinal)
 
         if (editar == null) {
 
@@ -847,9 +781,7 @@ class MainActivity : Activity() {
                 25
             )
 
-            conteudo.addView(
-                aviso
-            )
+            conteudo.addView(aviso)
 
         } else {
 
@@ -858,18 +790,12 @@ class MainActivity : Activity() {
                 val agendamento =
                     Agendamento(
                         cursor.getLong(0),
-                        cursor.getString(1)
-                            ?: "",
-                        cursor.getString(2)
-                            ?: "",
-                        cursor.getString(3)
-                            ?: "",
-                        cursor.getString(4)
-                            ?: "",
-                        cursor.getString(5)
-                            ?: "",
-                        cursor.getString(6)
-                            ?: "",
+                        cursor.getString(1) ?: "",
+                        cursor.getString(2) ?: "",
+                        cursor.getString(3) ?: "",
+                        cursor.getString(4) ?: "",
+                        cursor.getString(5) ?: "",
+                        cursor.getString(6) ?: "",
                         cursor.getDouble(7),
                         cursor.getDouble(8)
                     )
@@ -880,9 +806,7 @@ class MainActivity : Activity() {
                     )
                 )
 
-            } while (
-                cursor.moveToNext()
-            )
+            } while (cursor.moveToNext())
         }
 
         cursor.close()
@@ -996,9 +920,7 @@ class MainActivity : Activity() {
         texto.gravity =
             Gravity.CENTER
 
-        card.addView(
-            texto
-        )
+        card.addView(texto)
 
         card.addView(
             botao(
@@ -1060,9 +982,7 @@ class MainActivity : Activity() {
             30
         )
 
-        conteudo.addView(
-            aviso
-        )
+        conteudo.addView(aviso)
 
         conteudo.addView(
             botao(
