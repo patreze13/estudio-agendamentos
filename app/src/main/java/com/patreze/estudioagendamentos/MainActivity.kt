@@ -9,73 +9,44 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.os.Bundle
 import android.view.Gravity
 import android.widget.*
-import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 data class Agendamento(
     val id: Long,
-    val clienteId: Long,
-    val nomeCliente: String,
+    val nome: String,
     val contato: String,
     val data: String,
     val horario: String,
     val tipo: String,
     val observacoes: String,
-    val valorTotal: Double,
-    val sinal: Double,
-    val status: String
+    val valor: Double,
+    val sinal: Double
 )
 
-data class Entrega(
-    val id: Long,
-    val agendamentoId: Long,
-    val nomeCliente: String,
-    val dataEnsaio: String,
-    val horario: String,
-    val dataEntrega: String,
-    val status: String
-)
-
-class BancoHelper(context: android.content.Context) :
-    SQLiteOpenHelper(context, "estudio_agendamentos.db", null, 2) {
+class Banco(
+    activity: Activity
+) : SQLiteOpenHelper(
+    activity,
+    "estudio.db",
+    null,
+    1
+) {
 
     override fun onCreate(db: SQLiteDatabase) {
 
         db.execSQL(
             """
-            CREATE TABLE clientes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT NOT NULL,
-                contato TEXT NOT NULL
-            )
-            """.trimIndent()
-        )
-
-        db.execSQL(
-            """
             CREATE TABLE agendamentos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                cliente_id INTEGER NOT NULL,
+                nome TEXT NOT NULL,
+                contato TEXT NOT NULL,
                 data TEXT NOT NULL,
                 horario TEXT NOT NULL,
                 tipo TEXT NOT NULL,
                 observacoes TEXT,
-                valor_total REAL NOT NULL,
-                sinal REAL NOT NULL,
-                status TEXT NOT NULL
-            )
-            """.trimIndent()
-        )
-
-        db.execSQL(
-            """
-            CREATE TABLE entregas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                agendamento_id INTEGER NOT NULL,
-                data_entrega TEXT NOT NULL,
-                status TEXT NOT NULL
+                valor REAL NOT NULL,
+                sinal REAL NOT NULL
             )
             """.trimIndent()
         )
@@ -83,45 +54,63 @@ class BancoHelper(context: android.content.Context) :
 
     override fun onUpgrade(
         db: SQLiteDatabase,
-        oldVersion: Int,
-        newVersion: Int
+        antiga: Int,
+        nova: Int
     ) {
-        db.execSQL("DROP TABLE IF EXISTS entregas")
         db.execSQL("DROP TABLE IF EXISTS agendamentos")
-        db.execSQL("DROP TABLE IF EXISTS clientes")
         onCreate(db)
     }
 }
 
 class MainActivity : Activity() {
 
-    private lateinit var banco: BancoHelper
+    private lateinit var banco: Banco
 
-    private val formatoData =
-        SimpleDateFormat("dd/MM/yyyy", Locale("pt", "BR"))
-
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
         super.onCreate(savedInstanceState)
 
-        banco = BancoHelper(this)
+        banco = Banco(this)
 
-        mostrarMenu()
+        telaInicial()
     }
 
-    private fun layoutBase(): LinearLayout {
+    private fun base(): LinearLayout {
 
         return LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(30, 30, 30, 30)
+
+            orientation =
+                LinearLayout.VERTICAL
+
+            setPadding(
+                30,
+                30,
+                30,
+                30
+            )
         }
     }
 
-    private fun titulo(texto: String): TextView {
+    private fun titulo(
+        texto: String
+    ): TextView {
 
         return TextView(this).apply {
+
             text = texto
-            textSize = 25f
-            setPadding(0, 0, 0, 25)
+
+            textSize = 26f
+
+            gravity =
+                Gravity.CENTER
+
+            setPadding(
+                0,
+                0,
+                0,
+                30
+            )
         }
     }
 
@@ -130,9 +119,30 @@ class MainActivity : Activity() {
     ): EditText {
 
         return EditText(this).apply {
+
             hint = dica
+
             textSize = 16f
-            setPadding(10, 10, 10, 10)
+
+            setPadding(
+                15,
+                15,
+                15,
+                15
+            )
+
+            layoutParams =
+                LinearLayout.LayoutParams(
+                    -1,
+                    -2
+                ).apply {
+                    setMargins(
+                        0,
+                        0,
+                        0,
+                        12
+                    )
+                }
         }
     }
 
@@ -142,18 +152,31 @@ class MainActivity : Activity() {
     ): Button {
 
         return Button(this).apply {
+
             text = texto
+
             setOnClickListener {
                 acao()
             }
+
+            layoutParams =
+                LinearLayout.LayoutParams(
+                    -1,
+                    -2
+                ).apply {
+                    setMargins(
+                        0,
+                        8,
+                        0,
+                        8
+                    )
+                }
         }
     }
 
-    private fun mostrarMenu() {
+    private fun telaInicial() {
 
-        val layout = layoutBase()
-
-        layout.gravity = Gravity.CENTER_HORIZONTAL
+        val layout = base()
 
         layout.addView(
             titulo("ESTÚDIO")
@@ -173,7 +196,7 @@ class MainActivity : Activity() {
 
         layout.addView(
             botao("ENTREGAS") {
-                listarEntregas()
+                telaEntregas()
             }
         )
 
@@ -184,7 +207,7 @@ class MainActivity : Activity() {
         editar: Agendamento? = null
     ) {
 
-        val layout = layoutBase()
+        val layout = base()
 
         layout.addView(
             titulo(
@@ -195,40 +218,65 @@ class MainActivity : Activity() {
             )
         )
 
-        val nome = campo(
-            "Nome do cliente"
-        )
+        val nome =
+            campo("Nome do cliente")
 
-        val contato = campo(
-            "Contato / WhatsApp"
-        )
+        val contato =
+            campo("Contato / WhatsApp")
 
-        val data = campo(
-            "Data do ensaio — DD/MM/AAAA"
-        )
+        val data =
+            campo("Data do ensaio — DD/MM/AAAA")
 
-        val horario = campo(
-            "Horário do ensaio — HH:MM"
-        )
+        val horario =
+            campo("Horário do ensaio — HH:MM")
 
-        val tipo = campo(
-            "Tipo de ensaio"
-        )
+        val tipo =
+            campo("Tipo de ensaio")
 
-        val observacoes = campo(
-            "Observações"
-        )
+        val observacoes =
+            campo("Observações")
 
         observacoes.minLines = 4
-        observacoes.gravity = Gravity.TOP
 
-        val valorTotal = campo(
-            "Valor total — exemplo: 300,00"
-        )
+        val valor =
+            campo("Valor total — exemplo: 300,00")
 
-        val sinal = campo(
-            "Valor do sinal — deixe 0 se não houver"
-        )
+        val sinal =
+            campo("Valor do sinal — deixe 0 se não houver")
+
+        data.isFocusable = false
+        horario.isFocusable = false
+
+        data.setOnClickListener {
+            escolherData(data)
+        }
+
+        horario.setOnClickListener {
+            escolherHorario(horario)
+        }
+
+        if (editar != null) {
+
+            nome.setText(editar.nome)
+            contato.setText(editar.contato)
+            data.setText(editar.data)
+            horario.setText(editar.horario)
+            tipo.setText(editar.tipo)
+            observacoes.setText(
+                editar.observacoes
+            )
+
+            valor.setText(
+                editar.valor.toString()
+            )
+
+            sinal.setText(
+                editar.sinal.toString()
+            )
+        } else {
+
+            sinal.setText("0")
+        }
 
         layout.addView(nome)
         layout.addView(contato)
@@ -236,48 +284,8 @@ class MainActivity : Activity() {
         layout.addView(horario)
         layout.addView(tipo)
         layout.addView(observacoes)
-        layout.addView(valorTotal)
+        layout.addView(valor)
         layout.addView(sinal)
-
-        data.isFocusable = false
-        horario.isFocusable = false
-
-        data.setOnClickListener {
-            selecionarData(data)
-        }
-
-        horario.setOnClickListener {
-            selecionarHorario(horario)
-        }
-
-        if (editar != null) {
-
-            nome.setText(editar.nomeCliente)
-            contato.setText(editar.contato)
-            data.setText(editar.data)
-            horario.setText(editar.horario)
-            tipo.setText(editar.tipo)
-            observacoes.setText(editar.observacoes)
-
-            valorTotal.setText(
-                String.format(
-                    Locale.US,
-                    "%.2f",
-                    editar.valorTotal
-                )
-            )
-
-            sinal.setText(
-                String.format(
-                    Locale.US,
-                    "%.2f",
-                    editar.sinal
-                )
-            )
-
-        } else {
-            sinal.setText("0")
-        }
 
         layout.addView(
             botao(
@@ -287,190 +295,23 @@ class MainActivity : Activity() {
                     "SALVAR ALTERAÇÕES"
             ) {
 
-                val nomeTexto =
-                    nome.text.toString().trim()
-
-                val contatoTexto =
-                    contato.text.toString().trim()
-
-                val dataTexto =
-                    data.text.toString().trim()
-
-                val horarioTexto =
-                    horario.text.toString().trim()
-
-                val tipoTexto =
-                    tipo.text.toString().trim()
-
-                val observacoesTexto =
-                    observacoes.text.toString().trim()
-
-                val total =
-                    converterValor(
-                        valorTotal.text.toString()
-                    )
-
-                val valorSinal =
-                    converterValor(
-                        sinal.text.toString()
-                    ) ?: 0.0
-
-                if (
-                    nomeTexto.isBlank() ||
-                    contatoTexto.isBlank() ||
-                    dataTexto.isBlank() ||
-                    horarioTexto.isBlank() ||
-                    tipoTexto.isBlank() ||
-                    total == null
-                ) {
-
-                    Toast.makeText(
-                        this,
-                        "Preencha os campos obrigatórios.",
-                        Toast.LENGTH_LONG
-                    ).show()
-
-                    return@botao
-                }
-
-                if (valorSinal > total) {
-
-                    Toast.makeText(
-                        this,
-                        "O sinal não pode ser maior que o valor total.",
-                        Toast.LENGTH_LONG
-                    ).show()
-
-                    return@botao
-                }
-
-                if (editar == null) {
-
-                    val clienteId =
-                        salvarOuObterCliente(
-                            nomeTexto,
-                            contatoTexto
-                        )
-
-                    val valores =
-                        ContentValues()
-
-                    valores.put(
-                        "cliente_id",
-                        clienteId
-                    )
-
-                    valores.put(
-                        "data",
-                        dataTexto
-                    )
-
-                    valores.put(
-                        "horario",
-                        horarioTexto
-                    )
-
-                    valores.put(
-                        "tipo",
-                        tipoTexto
-                    )
-
-                    valores.put(
-                        "observacoes",
-                        observacoesTexto
-                    )
-
-                    valores.put(
-                        "valor_total",
-                        total
-                    )
-
-                    valores.put(
-                        "sinal",
-                        valorSinal
-                    )
-
-                    valores.put(
-                        "status",
-                        "Agendado"
-                    )
-
-                    banco.writableDatabase.insert(
-                        "agendamentos",
-                        null,
-                        valores
-                    )
-
-                    Toast.makeText(
-                        this,
-                        "Agendamento salvo com sucesso.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-
-                } else {
-
-                    atualizarCliente(
-                        editar.clienteId,
-                        nomeTexto,
-                        contatoTexto
-                    )
-
-                    val valores =
-                        ContentValues()
-
-                    valores.put(
-                        "data",
-                        dataTexto
-                    )
-
-                    valores.put(
-                        "horario",
-                        horarioTexto
-                    )
-
-                    valores.put(
-                        "tipo",
-                        tipoTexto
-                    )
-
-                    valores.put(
-                        "observacoes",
-                        observacoesTexto
-                    )
-
-                    valores.put(
-                        "valor_total",
-                        total
-                    )
-
-                    valores.put(
-                        "sinal",
-                        valorSinal
-                    )
-
-                    banco.writableDatabase.update(
-                        "agendamentos",
-                        valores,
-                        "id = ?",
-                        arrayOf(
-                            editar.id.toString()
-                        )
-                    )
-
-                    Toast.makeText(
-                        this,
-                        "Agendamento atualizado.",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-
-                mostrarMenu()
+                salvarAgendamento(
+                    editar,
+                    nome.text.toString().trim(),
+                    contato.text.toString().trim(),
+                    data.text.toString().trim(),
+                    horario.text.toString().trim(),
+                    tipo.text.toString().trim(),
+                    observacoes.text.toString().trim(),
+                    valor.text.toString().trim(),
+                    sinal.text.toString().trim()
+                )
             }
         )
 
         layout.addView(
-            botao("CANCELAR") {
-                mostrarMenu()
+            botao("VOLTAR") {
+                telaInicial()
             }
         )
 
@@ -481,48 +322,149 @@ class MainActivity : Activity() {
         )
     }
 
-    private fun converterValor(
+    private fun salvarAgendamento(
+        editar: Agendamento?,
+        nome: String,
+        contato: String,
+        data: String,
+        horario: String,
+        tipo: String,
+        observacoes: String,
+        valorTexto: String,
+        sinalTexto: String
+    ) {
+
+        if (
+            nome.isBlank() ||
+            contato.isBlank() ||
+            data.isBlank() ||
+            horario.isBlank() ||
+            tipo.isBlank() ||
+            valorTexto.isBlank()
+        ) {
+
+            Toast.makeText(
+                this,
+                "Preencha os campos obrigatórios.",
+                Toast.LENGTH_LONG
+            ).show()
+
+            return
+        }
+
+        val valor =
+            dinheiro(valorTexto)
+
+        val sinal =
+            if (sinalTexto.isBlank())
+                0.0
+            else
+                dinheiro(sinalTexto)
+
+        if (valor == null) {
+
+            Toast.makeText(
+                this,
+                "Digite um valor válido.",
+                Toast.LENGTH_LONG
+            ).show()
+
+            return
+        }
+
+        if (sinal == null) {
+
+            Toast.makeText(
+                this,
+                "Digite um sinal válido.",
+                Toast.LENGTH_LONG
+            ).show()
+
+            return
+        }
+
+        if (sinal > valor) {
+
+            Toast.makeText(
+                this,
+                "O sinal não pode ser maior que o valor.",
+                Toast.LENGTH_LONG
+            ).show()
+
+            return
+        }
+
+        val dados =
+            ContentValues()
+
+        dados.put("nome", nome)
+        dados.put("contato", contato)
+        dados.put("data", data)
+        dados.put("horario", horario)
+        dados.put("tipo", tipo)
+        dados.put("observacoes", observacoes)
+        dados.put("valor", valor)
+        dados.put("sinal", sinal)
+
+        if (editar == null) {
+
+            banco.writableDatabase.insert(
+                "agendamentos",
+                null,
+                dados
+            )
+
+            Toast.makeText(
+                this,
+                "Agendamento cadastrado com sucesso.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+        } else {
+
+            banco.writableDatabase.update(
+                "agendamentos",
+                dados,
+                "id = ?",
+                arrayOf(
+                    editar.id.toString()
+                )
+            )
+
+            Toast.makeText(
+                this,
+                "Agendamento atualizado.",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+
+        telaInicial()
+    }
+
+    private fun dinheiro(
         texto: String
     ): Double? {
 
-        val limpo =
-            texto.trim()
-                .replace("R$", "")
-                .replace(" ", "")
-
-        if (limpo.isBlank()) {
-            return null
-        }
-
         return try {
 
-            if (
-                limpo.contains(",") &&
-                limpo.contains(".")
-            ) {
-
-                limpo
-                    .replace(".", "")
-                    .replace(",", ".")
-                    .toDouble()
-
-            } else {
-
-                limpo
-                    .replace(",", ".")
-                    .toDouble()
-            }
+            texto
+                .replace("R$", "")
+                .replace(" ", "")
+                .replace(".", "")
+                .replace(",", ".")
+                .toDouble()
 
         } catch (_: Exception) {
+
             null
         }
     }
 
-    private fun selecionarData(
+    private fun escolherData(
         campo: EditText
     ) {
 
-        val calendario =
+        val agora =
             Calendar.getInstance()
 
         DatePickerDialog(
@@ -540,23 +482,17 @@ class MainActivity : Activity() {
                 )
 
             },
-            calendario.get(
-                Calendar.YEAR
-            ),
-            calendario.get(
-                Calendar.MONTH
-            ),
-            calendario.get(
-                Calendar.DAY_OF_MONTH
-            )
+            agora.get(Calendar.YEAR),
+            agora.get(Calendar.MONTH),
+            agora.get(Calendar.DAY_OF_MONTH)
         ).show()
     }
 
-    private fun selecionarHorario(
+    private fun escolherHorario(
         campo: EditText
     ) {
 
-        val calendario =
+        val agora =
             Calendar.getInstance()
 
         TimePickerDialog(
@@ -573,99 +509,15 @@ class MainActivity : Activity() {
                 )
 
             },
-            calendario.get(
-                Calendar.HOUR_OF_DAY
-            ),
-            calendario.get(
-                Calendar.MINUTE
-            ),
+            agora.get(Calendar.HOUR_OF_DAY),
+            agora.get(Calendar.MINUTE),
             true
         ).show()
     }
 
-    private fun salvarOuObterCliente(
-        nome: String,
-        contato: String
-    ): Long {
-
-        val db =
-            banco.writableDatabase
-
-        val cursor =
-            db.query(
-                "clientes",
-                arrayOf("id"),
-                "nome = ? AND contato = ?",
-                arrayOf(nome, contato),
-                null,
-                null,
-                null,
-                "1"
-            )
-
-        if (cursor.moveToFirst()) {
-
-            val id =
-                cursor.getLong(0)
-
-            cursor.close()
-
-            return id
-        }
-
-        cursor.close()
-
-        val valores =
-            ContentValues()
-
-        valores.put(
-            "nome",
-            nome
-        )
-
-        valores.put(
-            "contato",
-            contato
-        )
-
-        return db.insert(
-            "clientes",
-            null,
-            valores
-        )
-    }
-
-    private fun atualizarCliente(
-        id: Long,
-        nome: String,
-        contato: String
-    ) {
-
-        val valores =
-            ContentValues()
-
-        valores.put(
-            "nome",
-            nome
-        )
-
-        valores.put(
-            "contato",
-            contato
-        )
-
-        banco.writableDatabase.update(
-            "clientes",
-            valores,
-            "id = ?",
-            arrayOf(id.toString())
-        )
-    }
-
     private fun listarAgendamentos() {
 
-        val layout =
-            layoutBase()
+        val layout = base()
 
         layout.addView(
             titulo("AGENDAMENTOS")
@@ -681,43 +533,39 @@ class MainActivity : Activity() {
             banco.readableDatabase.rawQuery(
                 """
                 SELECT
-                    a.id,
-                    a.cliente_id,
-                    c.nome,
-                    c.contato,
-                    a.data,
-                    a.horario,
-                    a.tipo,
-                    a.observacoes,
-                    a.valor_total,
-                    a.sinal,
-                    a.status
-                FROM agendamentos a
-                INNER JOIN clientes c
-                    ON c.id = a.cliente_id
-                ORDER BY
-                    a.data ASC,
-                    a.horario ASC
+                    id,
+                    nome,
+                    contato,
+                    data,
+                    horario,
+                    tipo,
+                    observacoes,
+                    valor,
+                    sinal
+                FROM agendamentos
+                ORDER BY data, horario
                 """.trimIndent(),
                 null
             )
 
         if (!cursor.moveToFirst()) {
 
-            val vazio =
+            val aviso =
                 TextView(this)
 
-            vazio.text =
+            aviso.text =
                 "Nenhum agendamento cadastrado."
 
-            vazio.setPadding(
+            aviso.textSize = 17f
+
+            aviso.setPadding(
                 0,
                 30,
                 0,
                 30
             )
 
-            layout.addView(vazio)
+            layout.addView(aviso)
 
         } else {
 
@@ -725,25 +573,29 @@ class MainActivity : Activity() {
 
                 val agendamento =
                     Agendamento(
-                        id = cursor.getLong(0),
-                        clienteId = cursor.getLong(1),
-                        nomeCliente = cursor.getString(2),
-                        contato = cursor.getString(3),
-                        data = cursor.getString(4),
-                        horario = cursor.getString(5),
-                        tipo = cursor.getString(6),
+                        id =
+                            cursor.getLong(0),
+                        nome =
+                            cursor.getString(1),
+                        contato =
+                            cursor.getString(2),
+                        data =
+                            cursor.getString(3),
+                        horario =
+                            cursor.getString(4),
+                        tipo =
+                            cursor.getString(5),
                         observacoes =
-                            cursor.getString(7) ?: "",
-                        valorTotal =
-                            cursor.getDouble(8),
+                            cursor.getString(6)
+                                ?: "",
+                        valor =
+                            cursor.getDouble(7),
                         sinal =
-                            cursor.getDouble(9),
-                        status =
-                            cursor.getString(10)
+                            cursor.getDouble(8)
                     )
 
                 layout.addView(
-                    criarCardAgendamento(
+                    cardAgendamento(
                         agendamento
                     )
                 )
@@ -755,7 +607,7 @@ class MainActivity : Activity() {
 
         layout.addView(
             botao("VOLTAR") {
-                mostrarMenu()
+                telaInicial()
             }
         )
 
@@ -766,7 +618,7 @@ class MainActivity : Activity() {
         )
     }
 
-    private fun criarCardAgendamento(
+    private fun cardAgendamento(
         agendamento: Agendamento
     ): LinearLayout {
 
@@ -784,7 +636,7 @@ class MainActivity : Activity() {
         )
 
         val restante =
-            agendamento.valorTotal -
+            agendamento.valor -
                 agendamento.sinal
 
         val texto =
@@ -792,32 +644,18 @@ class MainActivity : Activity() {
 
         texto.text =
             """
-            ${agendamento.nomeCliente}
-            ${agendamento.contato}
+            ${agendamento.nome}
+
+            Contato: ${agendamento.contato}
 
             Data: ${agendamento.data}
             Horário: ${agendamento.horario}
+
             Tipo: ${agendamento.tipo}
 
-            Valor total: R$ ${
-                formatarDinheiro(
-                    agendamento.valorTotal
-                )
-            }
-
-            Sinal: R$ ${
-                formatarDinheiro(
-                    agendamento.sinal
-                )
-            }
-
-            Restante: R$ ${
-                formatarDinheiro(
-                    restante
-                )
-            }
-
-            Status: ${agendamento.status}
+            Valor: R$ ${formatar(agendamento.valor)}
+            Sinal: R$ ${formatar(agendamento.sinal)}
+            Restante: R$ ${formatar(restante)}
 
             Observações:
             ${agendamento.observacoes}
@@ -829,482 +667,14 @@ class MainActivity : Activity() {
 
         card.addView(
             botao("EDITAR / REAGENDAR") {
-                novoAgendamento(
-                    agendamento
-                )
+                novoAgendamento(agendamento)
             }
         )
-
-        if (agendamento.status != "Realizado") {
-
-            card.addView(
-                botao("MARCAR COMO REALIZADO") {
-
-                    marcarComoRealizado(
-                        agendamento
-                    )
-
-                    listarAgendamentos()
-                }
-            )
-        }
 
         return card
     }
 
-    private fun marcarComoRealizado(
-        agendamento: Agendamento
-    ) {
-
-        val valores =
-            ContentValues()
-
-        valores.put(
-            "status",
-            "Realizado"
-        )
-
-        banco.writableDatabase.update(
-            "agendamentos",
-            valores,
-            "id = ?",
-            arrayOf(
-                agendamento.id.toString()
-            )
-        )
-
-        criarEntrega(
-            agendamento
-        )
-    }
-
-    private fun criarEntrega(
-        agendamento: Agendamento
-    ) {
-
-        val existente =
-            banco.readableDatabase.rawQuery(
-                """
-                SELECT id
-                FROM entregas
-                WHERE agendamento_id = ?
-                """.trimIndent(),
-                arrayOf(
-                    agendamento.id.toString()
-                )
-            )
-
-        val jaExiste =
-            existente.moveToFirst()
-
-        existente.close()
-
-        if (jaExiste) {
-            return
-        }
-
-        try {
-
-            val dataEnsaio =
-                formatoData.parse(
-                    agendamento.data
-                ) ?: return
-
-            val calendario =
-                Calendar.getInstance()
-
-            calendario.time =
-                dataEnsaio
-
-            calendario.add(
-                Calendar.DAY_OF_MONTH,
-                7
-            )
-
-            val dataEntrega =
-                formatoData.format(
-                    calendario.time
-                )
-
-            val valores =
-                ContentValues()
-
-            valores.put(
-                "agendamento_id",
-                agendamento.id
-            )
-
-            valores.put(
-                "data_entrega",
-                dataEntrega
-            )
-
-            valores.put(
-                "status",
-                "Aguardando tratamento"
-            )
-
-            banco.writableDatabase.insert(
-                "entregas",
-                null,
-                valores
-            )
-
-        } catch (_: Exception) {
-        }
-    }
-
-    private fun listarEntregas() {
-
-        val layout =
-            layoutBase()
-
-        layout.addView(
-            titulo("ENTREGAS")
-        )
-
-        val cursor =
-            banco.readableDatabase.rawQuery(
-                """
-                SELECT
-                    e.id,
-                    e.agendamento_id,
-                    c.nome,
-                    a.data,
-                    a.horario,
-                    e.data_entrega,
-                    e.status
-                FROM entregas e
-                INNER JOIN agendamentos a
-                    ON a.id = e.agendamento_id
-                INNER JOIN clientes c
-                    ON c.id = a.cliente_id
-                ORDER BY e.data_entrega ASC
-                """.trimIndent(),
-                null
-            )
-
-        if (!cursor.moveToFirst()) {
-
-            val vazio =
-                TextView(this)
-
-            vazio.text =
-                "Nenhuma entrega cadastrada."
-
-            vazio.setPadding(
-                0,
-                30,
-                0,
-                30
-            )
-
-            layout.addView(vazio)
-
-        } else {
-
-            do {
-
-                val entrega =
-                    Entrega(
-                        id = cursor.getLong(0),
-                        agendamentoId =
-                            cursor.getLong(1),
-                        nomeCliente =
-                            cursor.getString(2),
-                        dataEnsaio =
-                            cursor.getString(3),
-                        horario =
-                            cursor.getString(4),
-                        dataEntrega =
-                            cursor.getString(5),
-                        status =
-                            cursor.getString(6)
-                    )
-
-                layout.addView(
-                    criarCardEntrega(
-                        entrega
-                    )
-                )
-
-            } while (cursor.moveToNext())
-        }
-
-        cursor.close()
-
-        layout.addView(
-            botao("VOLTAR") {
-                mostrarMenu()
-            }
-        )
-
-        setContentView(
-            ScrollView(this).apply {
-                addView(layout)
-            }
-        )
-    }
-
-    private fun criarCardEntrega(
-        entrega: Entrega
-    ): LinearLayout {
-
-        val card =
-            LinearLayout(this)
-
-        card.orientation =
-            LinearLayout.VERTICAL
-
-        card.setPadding(
-            0,
-            20,
-            0,
-            20
-        )
-
-        val dias =
-            calcularDiasRestantes(
-                entrega.dataEntrega
-            )
-
-        val indicador =
-            when {
-
-                entrega.status == "Entregue" ->
-                    "ENTREGUE"
-
-                dias < 0L ->
-                    "ATRASADA — ${-dias} dia(s)"
-
-                dias == 0L ->
-                    "VENCE HOJE"
-
-                dias <= 2L ->
-                    "PRAZO VENCENDO — $dias dia(s)"
-
-                dias <= 4L ->
-                    "PRAZO PRÓXIMO — $dias dia(s)"
-
-                else ->
-                    "PRAZO CONFORTÁVEL — $dias dia(s)"
-            }
-
-        val texto =
-            TextView(this)
-
-        texto.text =
-            """
-            ${entrega.nomeCliente}
-
-            Ensaio: ${entrega.dataEnsaio}
-            Horário: ${entrega.horario}
-
-            Data limite:
-            ${entrega.dataEntrega}
-
-            $indicador
-
-            Status: ${entrega.status}
-            """.trimIndent()
-
-        texto.textSize = 16f
-
-        card.addView(texto)
-
-        card.addView(
-            botao("ALTERAR DATA DE ENTREGA") {
-
-                selecionarNovaDataEntrega(
-                    entrega
-                )
-            }
-        )
-
-        if (entrega.status != "Entregue") {
-
-            card.addView(
-                botao("AGUARDANDO TRATAMENTO") {
-                    alterarStatusEntrega(
-                        entrega.id,
-                        "Aguardando tratamento"
-                    )
-                }
-            )
-
-            card.addView(
-                botao("EM TRATAMENTO") {
-                    alterarStatusEntrega(
-                        entrega.id,
-                        "Em tratamento"
-                    )
-                }
-            )
-
-            card.addView(
-                botao("PRONTA") {
-                    alterarStatusEntrega(
-                        entrega.id,
-                        "Pronta"
-                    )
-                }
-            )
-
-            card.addView(
-                botao("MARCAR COMO ENTREGUE") {
-                    alterarStatusEntrega(
-                        entrega.id,
-                        "Entregue"
-                    )
-                }
-            )
-        }
-
-        return card
-    }
-
-    private fun selecionarNovaDataEntrega(
-        entrega: Entrega
-    ) {
-
-        val calendario =
-            Calendar.getInstance()
-
-        try {
-
-            calendario.time =
-                formatoData.parse(
-                    entrega.dataEntrega
-                ) ?: calendario.time
-
-        } catch (_: Exception) {
-        }
-
-        DatePickerDialog(
-            this,
-            { _, ano, mes, dia ->
-
-                val novaData =
-                    String.format(
-                        Locale("pt", "BR"),
-                        "%02d/%02d/%04d",
-                        dia,
-                        mes + 1,
-                        ano
-                    )
-
-                val valores =
-                    ContentValues()
-
-                valores.put(
-                    "data_entrega",
-                    novaData
-                )
-
-                banco.writableDatabase.update(
-                    "entregas",
-                    valores,
-                    "id = ?",
-                    arrayOf(
-                        entrega.id.toString()
-                    )
-                )
-
-                listarEntregas()
-
-            },
-            calendario.get(Calendar.YEAR),
-            calendario.get(Calendar.MONTH),
-            calendario.get(Calendar.DAY_OF_MONTH)
-        ).show()
-    }
-
-    private fun alterarStatusEntrega(
-        id: Long,
-        status: String
-    ) {
-
-        val valores =
-            ContentValues()
-
-        valores.put(
-            "status",
-            status
-        )
-
-        banco.writableDatabase.update(
-            "entregas",
-            valores,
-            "id = ?",
-            arrayOf(
-                id.toString()
-            )
-        )
-
-        listarEntregas()
-    }
-
-    private fun calcularDiasRestantes(
-        dataEntrega: String
-    ): Long {
-
-        return try {
-
-            val data =
-                formatoData.parse(
-                    dataEntrega
-                ) ?: return 0L
-
-            val hoje =
-                Calendar.getInstance()
-
-            zerarHorario(hoje)
-
-            val entrega =
-                Calendar.getInstance()
-
-            entrega.time =
-                data
-
-            zerarHorario(entrega)
-
-            TimeUnit.MILLISECONDS.toDays(
-                entrega.timeInMillis -
-                    hoje.timeInMillis
-            )
-
-        } catch (_: Exception) {
-
-            0L
-        }
-    }
-
-    private fun zerarHorario(
-        calendario: Calendar
-    ) {
-
-        calendario.set(
-            Calendar.HOUR_OF_DAY,
-            0
-        )
-
-        calendario.set(
-            Calendar.MINUTE,
-            0
-        )
-
-        calendario.set(
-            Calendar.SECOND,
-            0
-        )
-
-        calendario.set(
-            Calendar.MILLISECOND,
-            0
-        )
-    }
-
-    private fun formatarDinheiro(
+    private fun formatar(
         valor: Double
     ): String {
 
@@ -1313,5 +683,39 @@ class MainActivity : Activity() {
             "%.2f",
             valor
         )
+    }
+
+    private fun telaEntregas() {
+
+        val layout = base()
+
+        layout.addView(
+            titulo("ENTREGAS")
+        )
+
+        val aviso =
+            TextView(this)
+
+        aviso.text =
+            "A parte de entregas será adicionada depois que o cadastro de agendamentos estiver funcionando corretamente."
+
+        aviso.textSize = 17f
+
+        aviso.setPadding(
+            0,
+            30,
+            0,
+            30
+        )
+
+        layout.addView(aviso)
+
+        layout.addView(
+            botao("VOLTAR") {
+                telaInicial()
+            }
+        )
+
+        setContentView(layout)
     }
 }
