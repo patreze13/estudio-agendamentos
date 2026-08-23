@@ -11,9 +11,10 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.Editable
+import android.text.InputType
 import android.text.TextWatcher
 import android.view.Gravity
-import android.view.ViewGroup
+import android.view.View
 import android.widget.*
 import java.util.Calendar
 import java.util.Locale
@@ -69,20 +70,26 @@ class MainActivity : Activity() {
 
     private lateinit var banco: Banco
 
-    private val lilasClaro =
-        Color.rgb(232, 220, 245)
+    private val lilasClaro = Color.rgb(232, 220, 245)
+    private val lilasFundo = Color.rgb(238, 228, 248)
 
-    private val lilasFundo =
-        Color.rgb(238, 228, 248)
+    private var telaAtual = "inicio"
 
-    override fun onCreate(
-        savedInstanceState: Bundle?
-    ) {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         banco = Banco(this)
 
         telaInicial()
+    }
+
+    override fun onBackPressed() {
+
+        if (telaAtual != "inicio") {
+            telaInicial()
+        } else {
+            super.onBackPressed()
+        }
     }
 
     private fun fundo(cor: Int): FrameLayout {
@@ -131,9 +138,7 @@ class MainActivity : Activity() {
 
             typeface = Typeface.DEFAULT_BOLD
 
-            setTextColor(
-                Color.rgb(70, 55, 75)
-            )
+            setTextColor(Color.rgb(70, 55, 75))
 
             setPadding(
                 0,
@@ -144,20 +149,29 @@ class MainActivity : Activity() {
         }
     }
 
+    /*
+     * BOTÃO PRÓPRIO.
+     *
+     * Não usamos Button do Android para evitar
+     * que o tema do sistema altere a cor do texto.
+     */
     private fun botao(
         texto: String,
         interno: Boolean = false,
         acao: () -> Unit
-    ): Button {
+    ): TextView {
 
-        return Button(this).apply {
+        return TextView(this).apply {
 
-            text = texto
+            this.text = texto
 
             textSize = 15f
 
-            // TEXTO DOS BOTÕES SEMPRE PRETO
             setTextColor(Color.BLACK)
+
+            gravity = Gravity.CENTER
+
+            typeface = Typeface.DEFAULT_BOLD
 
             background = GradientDrawable().apply {
 
@@ -171,7 +185,10 @@ class MainActivity : Activity() {
                 )
             }
 
-            elevation = 4f
+            elevation = 5f
+
+            isClickable = true
+            isFocusable = true
 
             setOnClickListener {
                 acao()
@@ -201,10 +218,13 @@ class MainActivity : Activity() {
 
             hint = dica
 
-            // FONTE REDUZIDA PARA CABER NAS CAIXAS
             textSize = 14f
 
-            setSingleLine(false)
+            setTextColor(Color.BLACK)
+
+            setHintTextColor(
+                Color.rgb(150, 150, 150)
+            )
 
             setPadding(
                 18,
@@ -254,8 +274,9 @@ class MainActivity : Activity() {
 
     private fun telaInicial() {
 
-        val tela =
-            fundo(lilasFundo)
+        telaAtual = "inicio"
+
+        val tela = fundo(lilasFundo)
 
         val conteudo =
             LinearLayout(this).apply {
@@ -293,37 +314,31 @@ class MainActivity : Activity() {
             }
         )
 
-        val parametros =
+        tela.addView(
+            conteudo,
             FrameLayout.LayoutParams(
                 -1,
                 -2,
                 Gravity.CENTER
             ).apply {
-
                 leftMargin = 40
                 rightMargin = 40
             }
-
-        tela.addView(
-            conteudo,
-            parametros
         )
 
         setContentView(tela)
 
-        window.statusBarColor =
-            lilasFundo
-
-        window.navigationBarColor =
-            lilasFundo
+        window.statusBarColor = lilasFundo
+        window.navigationBarColor = lilasFundo
     }
 
     private fun novoAgendamento(
         editar: Agendamento? = null
     ) {
 
-        val tela =
-            fundo(Color.WHITE)
+        telaAtual = "agendamento"
+
+        val tela = fundo(Color.WHITE)
 
         val conteudo =
             LinearLayout(this).apply {
@@ -393,7 +408,7 @@ class MainActivity : Activity() {
             )
 
         valor.inputType =
-            android.text.InputType.TYPE_CLASS_NUMBER
+            InputType.TYPE_CLASS_NUMBER
 
         val sinal =
             campo(
@@ -401,37 +416,26 @@ class MainActivity : Activity() {
             )
 
         sinal.inputType =
-            android.text.InputType.TYPE_CLASS_NUMBER
+            InputType.TYPE_CLASS_NUMBER
 
         if (editar != null) {
 
             nome.setText(editar.nome)
-
             contato.setText(editar.contato)
-
             data.setText(editar.data)
-
             horario.setText(editar.horario)
-
             tipo.setText(editar.tipo)
-
-            observacoes.setText(
-                editar.observacoes
-            )
+            observacoes.setText(editar.observacoes)
 
             if (editar.valor > 0) {
                 valor.setText(
-                    editar.valor
-                        .toInt()
-                        .toString()
+                    editar.valor.toInt().toString()
                 )
             }
 
             if (editar.sinal > 0) {
                 sinal.setText(
-                    editar.sinal
-                        .toInt()
-                        .toString()
+                    editar.sinal.toInt().toString()
                 )
             }
         }
@@ -477,25 +481,19 @@ class MainActivity : Activity() {
             }
         )
 
-        val parametros =
+        tela.addView(
+            conteudo,
             FrameLayout.LayoutParams(
                 -1,
                 -2,
                 Gravity.CENTER
             )
-
-        tela.addView(
-            conteudo,
-            parametros
         )
 
         setContentView(tela)
 
-        window.statusBarColor =
-            Color.WHITE
-
-        window.navigationBarColor =
-            Color.WHITE
+        window.statusBarColor = Color.WHITE
+        window.navigationBarColor = Color.WHITE
     }
 
     private fun salvarAgendamento(
@@ -511,21 +509,12 @@ class MainActivity : Activity() {
     ) {
 
         val valor =
-            if (valorTexto.isBlank())
-                0.0
-            else
-                valorTexto.toDoubleOrNull()
-                    ?: 0.0
+            valorTexto.toDoubleOrNull() ?: 0.0
 
         val sinal =
-            if (sinalTexto.isBlank())
-                0.0
-            else
-                sinalTexto.toDoubleOrNull()
-                    ?: 0.0
+            sinalTexto.toDoubleOrNull() ?: 0.0
 
-        val dados =
-            ContentValues()
+        val dados = ContentValues()
 
         dados.put("nome", nome)
         dados.put("contato", contato)
@@ -629,15 +618,12 @@ class MainActivity : Activity() {
                         }
 
                     if (
-                        formatado !=
-                        s.toString()
+                        formatado != s.toString()
                     ) {
 
                         alterando = true
 
-                        campo.setText(
-                            formatado
-                        )
+                        campo.setText(formatado)
 
                         campo.setSelection(
                             formatado.length
@@ -707,8 +693,9 @@ class MainActivity : Activity() {
 
     private fun listarAgendamentos() {
 
-        val tela =
-            fundo(Color.WHITE)
+        telaAtual = "agendamentos"
+
+        val tela = fundo(Color.WHITE)
 
         val conteudo =
             LinearLayout(this).apply {
@@ -831,11 +818,8 @@ class MainActivity : Activity() {
 
         setContentView(tela)
 
-        window.statusBarColor =
-            Color.WHITE
-
-        window.navigationBarColor =
-            Color.WHITE
+        window.statusBarColor = Color.WHITE
+        window.navigationBarColor = Color.WHITE
     }
 
     private fun cardAgendamento(
@@ -938,8 +922,9 @@ class MainActivity : Activity() {
 
     private fun telaEntregas() {
 
-        val tela =
-            fundo(Color.WHITE)
+        telaAtual = "entregas"
+
+        val tela = fundo(Color.WHITE)
 
         val conteudo =
             LinearLayout(this).apply {
@@ -1004,11 +989,8 @@ class MainActivity : Activity() {
 
         setContentView(tela)
 
-        window.statusBarColor =
-            Color.WHITE
-
-        window.navigationBarColor =
-            Color.WHITE
+        window.statusBarColor = Color.WHITE
+        window.navigationBarColor = Color.WHITE
     }
 
     private fun formatar(
