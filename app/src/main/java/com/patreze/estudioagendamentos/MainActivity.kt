@@ -14,10 +14,11 @@ import android.text.Editable
 import android.text.InputType
 import android.text.TextWatcher
 import android.view.Gravity
-import android.view.View
 import android.widget.*
+import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 data class Agendamento(
     val id: Long,
@@ -28,14 +29,17 @@ data class Agendamento(
     val tipo: String,
     val observacoes: String,
     val valor: Double,
-    val sinal: Double
+    val sinal: Double,
+    val realizado: Boolean,
+    val prazoEntrega: String?,
+    val entregaRealizada: Boolean
 )
 
 class Banco(activity: Activity) : SQLiteOpenHelper(
     activity,
     "estudio.db",
     null,
-    1
+    2
 ) {
 
     override fun onCreate(db: SQLiteDatabase) {
@@ -50,7 +54,10 @@ class Banco(activity: Activity) : SQLiteOpenHelper(
                 tipo TEXT,
                 observacoes TEXT,
                 valor REAL,
-                sinal REAL
+                sinal REAL,
+                realizado INTEGER DEFAULT 0,
+                prazo_entrega TEXT,
+                entrega_realizada INTEGER DEFAULT 0
             )
             """.trimIndent()
         )
@@ -61,8 +68,19 @@ class Banco(activity: Activity) : SQLiteOpenHelper(
         antiga: Int,
         nova: Int
     ) {
-        db.execSQL("DROP TABLE IF EXISTS agendamentos")
-        onCreate(db)
+        if (antiga < 2) {
+            db.execSQL(
+                "ALTER TABLE agendamentos ADD COLUMN realizado INTEGER DEFAULT 0"
+            )
+
+            db.execSQL(
+                "ALTER TABLE agendamentos ADD COLUMN prazo_entrega TEXT"
+            )
+
+            db.execSQL(
+                "ALTER TABLE agendamentos ADD COLUMN entrega_realizada INTEGER DEFAULT 0"
+            )
+        }
     }
 }
 
@@ -84,7 +102,6 @@ class MainActivity : Activity() {
     }
 
     override fun onBackPressed() {
-
         if (telaAtual != "inicio") {
             telaInicial()
         } else {
@@ -100,93 +117,46 @@ class MainActivity : Activity() {
 
     private fun tituloPrincipal(): TextView {
         return TextView(this).apply {
-
             text = "Agendamentos\nEstúdio Rafa Fraga"
-
             textSize = 30f
-
             gravity = Gravity.CENTER
-
-            typeface = Typeface.create(
-                "cursive",
-                Typeface.NORMAL
-            )
-
-            setTextColor(
-                Color.rgb(80, 55, 90)
-            )
-
-            setPadding(
-                0,
-                0,
-                0,
-                35
-            )
+            typeface = Typeface.create("cursive", Typeface.NORMAL)
+            setTextColor(Color.rgb(80, 55, 90))
+            setPadding(0, 0, 0, 35)
         }
     }
 
-    private fun tituloInterno(
-        texto: String
-    ): TextView {
+    private fun tituloInterno(texto: String): TextView {
         return TextView(this).apply {
-
             text = texto
-
             textSize = 26f
-
             gravity = Gravity.CENTER
-
             typeface = Typeface.DEFAULT_BOLD
-
             setTextColor(Color.rgb(70, 55, 75))
-
-            setPadding(
-                0,
-                0,
-                0,
-                25
-            )
+            setPadding(0, 0, 0, 25)
         }
     }
 
-    /*
-     * BOTÃO PRÓPRIO.
-     *
-     * Não usamos Button do Android para evitar
-     * que o tema do sistema altere a cor do texto.
-     */
     private fun botao(
         texto: String,
         interno: Boolean = false,
         acao: () -> Unit
     ): TextView {
-
         return TextView(this).apply {
-
-            this.text = texto
-
+            text = texto
             textSize = 15f
-
             setTextColor(Color.BLACK)
-
             gravity = Gravity.CENTER
-
             typeface = Typeface.DEFAULT_BOLD
 
             background = GradientDrawable().apply {
-
                 cornerRadius = 22f
-
                 setColor(
-                    if (interno)
-                        lilasClaro
-                    else
-                        Color.WHITE
+                    if (interno) lilasClaro else Color.WHITE
                 )
             }
 
             elevation = 5f
-
             isClickable = true
             isFocusable = true
 
@@ -199,75 +169,35 @@ class MainActivity : Activity() {
                     620,
                     65
                 ).apply {
-
-                    setMargins(
-                        0,
-                        8,
-                        0,
-                        8
-                    )
+                    setMargins(0, 8, 0, 8)
                 }
         }
     }
 
-    private fun campo(
-        dica: String
-    ): EditText {
-
+    private fun campo(dica: String): EditText {
         return EditText(this).apply {
-
             hint = dica
-
             textSize = 14f
-
             setTextColor(Color.BLACK)
+            setHintTextColor(Color.rgb(150, 150, 150))
 
-            setHintTextColor(
-                Color.rgb(150, 150, 150)
-            )
+            setPadding(18, 8, 18, 8)
 
-            setPadding(
-                18,
-                8,
-                18,
-                8
-            )
-
-            background =
-                GradientDrawable().apply {
-
-                    cornerRadius = 18f
-
-                    setColor(
-                        Color.rgb(
-                            248,
-                            248,
-                            248
-                        )
-                    )
-
-                    setStroke(
-                        2,
-                        Color.rgb(
-                            225,
-                            225,
-                            225
-                        )
-                    )
-                }
+            background = GradientDrawable().apply {
+                cornerRadius = 18f
+                setColor(Color.rgb(248, 248, 248))
+                setStroke(
+                    2,
+                    Color.rgb(225, 225, 225)
+                )
+            }
 
             layoutParams =
                 LinearLayout.LayoutParams(
                     -1,
                     60
                 ).apply {
-
-                    setMargins(
-                        0,
-                        0,
-                        0,
-                        10
-                    )
+                    setMargins(0, 0, 0, 10)
                 }
         }
     }
@@ -280,20 +210,13 @@ class MainActivity : Activity() {
 
         val conteudo =
             LinearLayout(this).apply {
-
-                orientation =
-                    LinearLayout.VERTICAL
-
-                gravity =
-                    Gravity.CENTER_HORIZONTAL
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
             }
 
         conteudo.addView(
             tituloPrincipal(),
-            LinearLayout.LayoutParams(
-                -1,
-                -2
-            )
+            LinearLayout.LayoutParams(-1, -2)
         )
 
         conteudo.addView(
@@ -342,19 +265,9 @@ class MainActivity : Activity() {
 
         val conteudo =
             LinearLayout(this).apply {
-
-                orientation =
-                    LinearLayout.VERTICAL
-
-                gravity =
-                    Gravity.CENTER_HORIZONTAL
-
-                setPadding(
-                    30,
-                    20,
-                    30,
-                    20
-                )
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                setPadding(30, 20, 30, 20)
             }
 
         conteudo.addView(
@@ -366,16 +279,13 @@ class MainActivity : Activity() {
             )
         )
 
-        val nome =
-            campo("Nome do Cliente")
+        val nome = campo("Nome do Cliente")
 
-        val contato =
-            campo("Contato")
+        val contato = campo("Contato")
 
         aplicarMascaraTelefone(contato)
 
-        val data =
-            campo("Data do ensaio")
+        val data = campo("Data do ensaio")
 
         data.isFocusable = false
         data.isClickable = true
@@ -384,8 +294,7 @@ class MainActivity : Activity() {
             escolherData(data)
         }
 
-        val horario =
-            campo("Horário do ensaio")
+        val horario = campo("Horário do ensaio")
 
         horario.isFocusable = false
         horario.isClickable = true
@@ -394,11 +303,9 @@ class MainActivity : Activity() {
             escolherHorario(horario)
         }
 
-        val tipo =
-            campo("Tipo de ensaio")
+        val tipo = campo("Tipo de ensaio")
 
-        val observacoes =
-            campo("Observações")
+        val observacoes = campo("Observações")
 
         observacoes.minLines = 3
 
@@ -419,7 +326,6 @@ class MainActivity : Activity() {
             InputType.TYPE_CLASS_NUMBER
 
         if (editar != null) {
-
             nome.setText(editar.nome)
             contato.setText(editar.contato)
             data.setText(editar.data)
@@ -457,7 +363,6 @@ class MainActivity : Activity() {
                     "SALVAR ALTERAÇÕES",
                 true
             ) {
-
                 salvarAgendamento(
                     editar,
                     nome.text.toString().trim(),
@@ -471,6 +376,23 @@ class MainActivity : Activity() {
                 )
             }
         )
+
+        /*
+         * NOVO:
+         * Quando estiver editando um agendamento ainda não realizado,
+         * aparece a opção para registrar que o ensaio aconteceu.
+         */
+        if (editar != null && !editar.realizado) {
+
+            conteudo.addView(
+                botao(
+                    "ENSAIO REALIZADO",
+                    true
+                ) {
+                    marcarEnsaioRealizado(editar.id)
+                }
+            )
+        }
 
         conteudo.addView(
             botao(
@@ -545,9 +467,7 @@ class MainActivity : Activity() {
                 "agendamentos",
                 dados,
                 "id = ?",
-                arrayOf(
-                    editar.id.toString()
-                )
+                arrayOf(editar.id.toString())
             )
 
             Toast.makeText(
@@ -558,6 +478,83 @@ class MainActivity : Activity() {
         }
 
         listarAgendamentos()
+    }
+
+    private fun marcarEnsaioRealizado(id: Long) {
+
+        val cursor =
+            banco.readableDatabase.rawQuery(
+                "SELECT data FROM agendamentos WHERE id = ?",
+                arrayOf(id.toString())
+            )
+
+        var dataEnsaio = ""
+
+        if (cursor.moveToFirst()) {
+            dataEnsaio =
+                cursor.getString(0) ?: ""
+        }
+
+        cursor.close()
+
+        val prazo =
+            calcularPrazo(dataEnsaio)
+
+        val dados = ContentValues()
+
+        dados.put("realizado", 1)
+        dados.put("prazo_entrega", prazo)
+        dados.put("entrega_realizada", 0)
+
+        banco.writableDatabase.update(
+            "agendamentos",
+            dados,
+            "id = ?",
+            arrayOf(id.toString())
+        )
+
+        Toast.makeText(
+            this,
+            "Ensaio marcado como realizado. Prazo: $prazo",
+            Toast.LENGTH_LONG
+        ).show()
+
+        listarAgendamentos()
+    }
+
+    private fun calcularPrazo(
+        data: String
+    ): String {
+
+        return try {
+
+            val formato =
+                SimpleDateFormat(
+                    "dd/MM/yyyy",
+                    Locale("pt", "BR")
+                )
+
+            val dataOriginal =
+                formato.parse(data)
+
+            val calendario =
+                Calendar.getInstance()
+
+            calendario.time = dataOriginal!!
+
+            calendario.add(
+                Calendar.DAY_OF_MONTH,
+                7
+            )
+
+            formato.format(
+                calendario.time
+            )
+
+        } catch (_: Exception) {
+
+            ""
+        }
     }
 
     private fun aplicarMascaraTelefone(
@@ -592,9 +589,7 @@ class MainActivity : Activity() {
 
                     val numeros =
                         s.toString()
-                            .filter {
-                                it.isDigit()
-                            }
+                            .filter { it.isDigit() }
                             .take(11)
 
                     if (numeros.isEmpty())
@@ -604,7 +599,7 @@ class MainActivity : Activity() {
                         when {
 
                             numeros.length <= 2 ->
-                                "(${numeros}"
+                                "($numeros"
 
                             numeros.length <= 7 ->
                                 "(${numeros.substring(0, 2)}) " +
@@ -699,25 +694,13 @@ class MainActivity : Activity() {
 
         val conteudo =
             LinearLayout(this).apply {
-
-                orientation =
-                    LinearLayout.VERTICAL
-
-                gravity =
-                    Gravity.CENTER_HORIZONTAL
-
-                setPadding(
-                    35,
-                    25,
-                    35,
-                    25
-                )
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                setPadding(35, 25, 35, 25)
             }
 
         conteudo.addView(
-            tituloInterno(
-                "AGENDAMENTOS"
-            )
+            tituloInterno("AGENDAMENTOS")
         )
 
         conteudo.addView(
@@ -741,7 +724,10 @@ class MainActivity : Activity() {
                     tipo,
                     observacoes,
                     valor,
-                    sinal
+                    sinal,
+                    realizado,
+                    prazo_entrega,
+                    entrega_realizada
                 FROM agendamentos
                 ORDER BY data, horario
                 """.trimIndent(),
@@ -750,16 +736,13 @@ class MainActivity : Activity() {
 
         if (!cursor.moveToFirst()) {
 
-            val aviso =
-                TextView(this)
+            val aviso = TextView(this)
 
             aviso.text =
                 "Nenhum agendamento cadastrado."
 
             aviso.textSize = 17f
-
-            aviso.gravity =
-                Gravity.CENTER
+            aviso.gravity = Gravity.CENTER
 
             aviso.setPadding(
                 0,
@@ -784,7 +767,10 @@ class MainActivity : Activity() {
                         cursor.getString(5) ?: "",
                         cursor.getString(6) ?: "",
                         cursor.getDouble(7),
-                        cursor.getDouble(8)
+                        cursor.getDouble(8),
+                        cursor.getInt(9) == 1,
+                        cursor.getString(10),
+                        cursor.getInt(11) == 1
                     )
 
                 conteudo.addView(
@@ -846,6 +832,12 @@ class MainActivity : Activity() {
             agendamento.valor -
                 agendamento.sinal
 
+        val status =
+            if (agendamento.realizado)
+                "ENSAIO REALIZADO"
+            else
+                "ENSAIO PENDENTE"
+
         val texto =
             TextView(this)
 
@@ -879,17 +871,13 @@ class MainActivity : Activity() {
                 }
             }
 
-            Valor: R$ ${
-                formatar(agendamento.valor)
-            }
+            Valor: R$ ${formatar(agendamento.valor)}
 
-            Sinal: R$ ${
-                formatar(agendamento.sinal)
-            }
+            Sinal: R$ ${formatar(agendamento.sinal)}
 
-            Restante: R$ ${
-                formatar(restante)
-            }
+            Restante: R$ ${formatar(restante)}
+
+            Status: $status
 
             Observações:
             ${
@@ -900,9 +888,7 @@ class MainActivity : Activity() {
             """.trimIndent()
 
         texto.textSize = 16f
-
-        texto.gravity =
-            Gravity.CENTER
+        texto.gravity = Gravity.CENTER
 
         card.addView(texto)
 
@@ -911,11 +897,23 @@ class MainActivity : Activity() {
                 "EDITAR / REAGENDAR",
                 true
             ) {
-                novoAgendamento(
-                    agendamento
-                )
+                novoAgendamento(agendamento)
             }
         )
+
+        if (!agendamento.realizado) {
+
+            card.addView(
+                botao(
+                    "ENSAIO REALIZADO",
+                    true
+                ) {
+                    marcarEnsaioRealizado(
+                        agendamento.id
+                    )
+                }
+            )
+        }
 
         return card
     }
@@ -928,46 +926,85 @@ class MainActivity : Activity() {
 
         val conteudo =
             LinearLayout(this).apply {
-
-                orientation =
-                    LinearLayout.VERTICAL
-
-                gravity =
-                    Gravity.CENTER
-
-                setPadding(
-                    35,
-                    35,
-                    35,
-                    35
-                )
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                setPadding(35, 25, 35, 25)
             }
 
         conteudo.addView(
-            tituloInterno(
-                "ENTREGAS"
+            tituloInterno("ENTREGAS")
+        )
+
+        val cursor =
+            banco.readableDatabase.rawQuery(
+                """
+                SELECT
+                    id,
+                    nome,
+                    contato,
+                    data,
+                    horario,
+                    tipo,
+                    observacoes,
+                    valor,
+                    sinal,
+                    realizado,
+                    prazo_entrega,
+                    entrega_realizada
+                FROM agendamentos
+                WHERE realizado = 1
+                ORDER BY entrega_realizada, prazo_entrega
+                """.trimIndent(),
+                null
             )
-        )
 
-        val aviso =
-            TextView(this)
+        if (!cursor.moveToFirst()) {
 
-        aviso.text =
-            "A parte de entregas será adicionada nesta etapa."
+            val aviso = TextView(this)
 
-        aviso.textSize = 17f
+            aviso.text =
+                "Nenhuma entrega pendente."
 
-        aviso.gravity =
-            Gravity.CENTER
+            aviso.textSize = 17f
+            aviso.gravity = Gravity.CENTER
 
-        aviso.setPadding(
-            0,
-            20,
-            0,
-            30
-        )
+            aviso.setPadding(
+                0,
+                25,
+                0,
+                25
+            )
 
-        conteudo.addView(aviso)
+            conteudo.addView(aviso)
+
+        } else {
+
+            do {
+
+                val agendamento =
+                    Agendamento(
+                        cursor.getLong(0),
+                        cursor.getString(1) ?: "",
+                        cursor.getString(2) ?: "",
+                        cursor.getString(3) ?: "",
+                        cursor.getString(4) ?: "",
+                        cursor.getString(5) ?: "",
+                        cursor.getString(6) ?: "",
+                        cursor.getDouble(7),
+                        cursor.getDouble(8),
+                        cursor.getInt(9) == 1,
+                        cursor.getString(10),
+                        cursor.getInt(11) == 1
+                    )
+
+                conteudo.addView(
+                    cardEntrega(agendamento)
+                )
+
+            } while (cursor.moveToNext())
+        }
+
+        cursor.close()
 
         conteudo.addView(
             botao(
@@ -991,6 +1028,156 @@ class MainActivity : Activity() {
 
         window.statusBarColor = Color.WHITE
         window.navigationBarColor = Color.WHITE
+    }
+
+    private fun cardEntrega(
+        agendamento: Agendamento
+    ): LinearLayout {
+
+        val card =
+            LinearLayout(this)
+
+        card.orientation =
+            LinearLayout.VERTICAL
+
+        card.gravity =
+            Gravity.CENTER_HORIZONTAL
+
+        card.setPadding(
+            0,
+            15,
+            0,
+            15
+        )
+
+        val prazo =
+            agendamento.prazoEntrega
+                ?: "Não definido"
+
+        val texto =
+            TextView(this)
+
+        texto.text =
+            """
+            ${agendamento.nome.ifBlank {
+                "Cliente sem nome"
+            }}
+
+            Ensaio: ${
+                agendamento.data.ifBlank {
+                    "Não informado"
+                }
+            }
+
+            Prazo de entrega: $prazo
+
+            Status: ${
+                if (agendamento.entregaRealizada)
+                    "ENTREGA REALIZADA"
+                else
+                    "ENTREGA PENDENTE"
+            }
+            """.trimIndent()
+
+        texto.textSize = 16f
+        texto.gravity = Gravity.CENTER
+
+        card.addView(texto)
+
+        if (!agendamento.entregaRealizada) {
+
+            card.addView(
+                botao(
+                    "ALTERAR PRAZO",
+                    true
+                ) {
+                    alterarPrazo(
+                        agendamento.id
+                    )
+                }
+            )
+
+            card.addView(
+                botao(
+                    "ENTREGA REALIZADA",
+                    true
+                ) {
+                    marcarEntregaRealizada(
+                        agendamento.id
+                    )
+                }
+            )
+        }
+
+        return card
+    }
+
+    private fun alterarPrazo(id: Long) {
+
+        val calendario =
+            Calendar.getInstance()
+
+        DatePickerDialog(
+            this,
+            { _, ano, mes, dia ->
+
+                val data =
+                    String.format(
+                        Locale("pt", "BR"),
+                        "%02d/%02d/%04d",
+                        dia,
+                        mes + 1,
+                        ano
+                    )
+
+                val dados =
+                    ContentValues()
+
+                dados.put(
+                    "prazo_entrega",
+                    data
+                )
+
+                banco.writableDatabase.update(
+                    "agendamentos",
+                    dados,
+                    "id = ?",
+                    arrayOf(id.toString())
+                )
+
+                telaEntregas()
+
+            },
+            calendario.get(Calendar.YEAR),
+            calendario.get(Calendar.MONTH),
+            calendario.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
+    private fun marcarEntregaRealizada(id: Long) {
+
+        val dados =
+            ContentValues()
+
+        dados.put(
+            "entrega_realizada",
+            1
+        )
+
+        banco.writableDatabase.update(
+            "agendamentos",
+            dados,
+            "id = ?",
+            arrayOf(id.toString())
+        )
+
+        Toast.makeText(
+            this,
+            "Entrega marcada como realizada.",
+            Toast.LENGTH_SHORT
+        ).show()
+
+        telaEntregas()
     }
 
     private fun formatar(
