@@ -6,11 +6,14 @@ import android.app.TimePickerDialog
 import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
+import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.Gravity
-import android.view.ViewGroup
+import android.view.View
 import android.widget.*
 import java.util.Calendar
 import java.util.Locale
@@ -35,6 +38,7 @@ class Banco(activity: Activity) : SQLiteOpenHelper(
 ) {
 
     override fun onCreate(db: SQLiteDatabase) {
+
         db.execSQL(
             """
             CREATE TABLE agendamentos (
@@ -57,7 +61,10 @@ class Banco(activity: Activity) : SQLiteOpenHelper(
         antiga: Int,
         nova: Int
     ) {
-        db.execSQL("DROP TABLE IF EXISTS agendamentos")
+        db.execSQL(
+            "DROP TABLE IF EXISTS agendamentos"
+        )
+
         onCreate(db)
     }
 }
@@ -66,7 +73,15 @@ class MainActivity : Activity() {
 
     private lateinit var banco: Banco
 
-    override fun onCreate(savedInstanceState: Bundle?) {
+    private val lilasClaro =
+        Color.rgb(232, 220, 245)
+
+    private val lilasFundo =
+        Color.rgb(238, 228, 248)
+
+    override fun onCreate(
+        savedInstanceState: Bundle?
+    ) {
         super.onCreate(savedInstanceState)
 
         banco = Banco(this)
@@ -74,141 +89,282 @@ class MainActivity : Activity() {
         telaInicial()
     }
 
-    private fun telaBase(): LinearLayout {
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(35, 35, 35, 35)
+    private fun fundo(
+        cor: Int
+    ): FrameLayout {
+
+        return FrameLayout(this).apply {
+            setBackgroundColor(cor)
         }
     }
 
-    private fun titulo(texto: String): TextView {
+    private fun tituloPrincipal(): TextView {
+
         return TextView(this).apply {
-            text = texto
-            textSize = 26f
-            gravity = Gravity.CENTER
-            setPadding(0, 10, 0, 30)
-            layoutParams = LinearLayout.LayoutParams(
-                -1,
-                -2
+
+            text =
+                "Agendamentos\nEstúdio Rafa Fraga"
+
+            textSize = 30f
+
+            gravity =
+                Gravity.CENTER
+
+            typeface =
+                Typeface.create(
+                    "cursive",
+                    Typeface.NORMAL
+                )
+
+            setTextColor(
+                Color.rgb(80, 55, 90)
+            )
+
+            setPadding(
+                0,
+                0,
+                0,
+                35
             )
         }
     }
 
-    private fun campo(dica: String): EditText {
-        return EditText(this).apply {
-            hint = dica
-            textSize = 16f
-            setPadding(15, 10, 15, 10)
+    private fun tituloInterno(
+        texto: String
+    ): TextView {
 
-            layoutParams = LinearLayout.LayoutParams(
-                -1,
-                -2
-            ).apply {
-                setMargins(0, 0, 0, 14)
-            }
+        return TextView(this).apply {
+
+            text = texto
+
+            textSize = 26f
+
+            gravity =
+                Gravity.CENTER
+
+            typeface =
+                Typeface.DEFAULT_BOLD
+
+            setTextColor(
+                Color.rgb(70, 55, 75)
+            )
+
+            setPadding(
+                0,
+                0,
+                0,
+                25
+            )
         }
     }
 
     private fun botao(
         texto: String,
+        interno: Boolean = false,
         acao: () -> Unit
     ): Button {
+
         return Button(this).apply {
 
             text = texto
+
+            textSize = 15f
+
+            setTextColor(
+                Color.rgb(65, 50, 70)
+            )
+
+            background =
+                GradientDrawable().apply {
+
+                    cornerRadius = 22f
+
+                    setColor(
+                        if (interno)
+                            lilasClaro
+                        else
+                            Color.WHITE
+                    )
+                }
+
+            elevation = 4f
 
             setOnClickListener {
                 acao()
             }
 
-            layoutParams = LinearLayout.LayoutParams(
-                -1,
-                -2
-            ).apply {
-                setMargins(0, 8, 0, 8)
-            }
+            layoutParams =
+                LinearLayout.LayoutParams(
+                    620,
+                    65
+                ).apply {
+
+                    setMargins(
+                        0,
+                        8,
+                        0,
+                        8
+                    )
+                }
         }
     }
 
-    private fun telaCentralizada(
-        conteudo: LinearLayout,
-        rolagem: Boolean = false
-    ) {
+    private fun campo(
+        dica: String
+    ): EditText {
 
-        if (rolagem) {
+        return EditText(this).apply {
 
-            val scroll =
-                ScrollView(this)
+            hint = dica
 
-            scroll.addView(
-                conteudo,
-                ViewGroup.LayoutParams(
-                    -1,
-                    -2
-                )
+            textSize = 16f
+
+            setSingleLine(false)
+
+            setPadding(
+                18,
+                10,
+                18,
+                10
             )
 
-            setContentView(scroll)
+            background =
+                GradientDrawable().apply {
 
-        } else {
+                    cornerRadius = 18f
 
-            val frame =
-                FrameLayout(this)
+                    setColor(
+                        Color.rgb(
+                            248,
+                            248,
+                            248
+                        )
+                    )
 
-            frame.addView(
-                conteudo,
-                FrameLayout.LayoutParams(
+                    setStroke(
+                        2,
+                        Color.rgb(
+                            225,
+                            225,
+                            225
+                        )
+                    )
+                }
+
+            layoutParams =
+                LinearLayout.LayoutParams(
                     -1,
-                    -2,
-                    Gravity.CENTER
-                )
-            )
+                    60
+                ).apply {
 
-            setContentView(frame)
+                    setMargins(
+                        0,
+                        0,
+                        0,
+                        10
+                    )
+                }
         }
     }
 
     private fun telaInicial() {
 
-        val layout = telaBase()
+        val tela =
+            fundo(lilasFundo)
 
-        layout.gravity =
-            Gravity.CENTER
+        val conteudo =
+            LinearLayout(this).apply {
 
-        layout.addView(
-            titulo("ESTÚDIO")
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER_HORIZONTAL
+            }
+
+        conteudo.addView(
+            tituloPrincipal(),
+            LinearLayout.LayoutParams(
+                -1,
+                -2
+            )
         )
 
-        layout.addView(
-            botao("NOVO AGENDAMENTO") {
+        conteudo.addView(
+            botao(
+                "NOVO AGENDAMENTO"
+            ) {
                 novoAgendamento()
             }
         )
 
-        layout.addView(
-            botao("AGENDAMENTOS") {
+        conteudo.addView(
+            botao(
+                "AGENDAMENTOS"
+            ) {
                 listarAgendamentos()
             }
         )
 
-        layout.addView(
-            botao("ENTREGAS") {
+        conteudo.addView(
+            botao(
+                "ENTREGAS"
+            ) {
                 telaEntregas()
             }
         )
 
-        telaCentralizada(layout)
+        val parametros =
+            FrameLayout.LayoutParams(
+                -1,
+                -2,
+                Gravity.CENTER
+            ).apply {
+
+                leftMargin = 40
+                rightMargin = 40
+            }
+
+        tela.addView(
+            conteudo,
+            parametros
+        )
+
+        setContentView(tela)
+
+        window.statusBarColor =
+            lilasFundo
+
+        window.navigationBarColor =
+            lilasFundo
     }
 
     private fun novoAgendamento(
         editar: Agendamento? = null
     ) {
 
-        val layout = telaBase()
+        val tela =
+            fundo(Color.WHITE)
 
-        layout.addView(
-            titulo(
+        val conteudo =
+            LinearLayout(this).apply {
+
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER_HORIZONTAL
+
+                setPadding(
+                    30,
+                    20,
+                    30,
+                    20
+                )
+            }
+
+        conteudo.addView(
+            tituloInterno(
                 if (editar == null)
                     "NOVO AGENDAMENTO"
                 else
@@ -222,7 +378,9 @@ class MainActivity : Activity() {
         val contato =
             campo("Contato")
 
-        aplicarMascaraTelefone(contato)
+        aplicarMascaraTelefone(
+            contato
+        )
 
         val data =
             campo("Data do ensaio")
@@ -250,7 +408,7 @@ class MainActivity : Activity() {
         val observacoes =
             campo("Observações")
 
-        observacoes.minLines = 4
+        observacoes.minLines = 3
 
         val valor =
             campo(
@@ -270,16 +428,32 @@ class MainActivity : Activity() {
 
         if (editar != null) {
 
-            nome.setText(editar.nome)
-            contato.setText(editar.contato)
-            data.setText(editar.data)
-            horario.setText(editar.horario)
-            tipo.setText(editar.tipo)
+            nome.setText(
+                editar.nome
+            )
+
+            contato.setText(
+                editar.contato
+            )
+
+            data.setText(
+                editar.data
+            )
+
+            horario.setText(
+                editar.horario
+            )
+
+            tipo.setText(
+                editar.tipo
+            )
+
             observacoes.setText(
                 editar.observacoes
             )
 
             if (editar.valor > 0) {
+
                 valor.setText(
                     editar.valor
                         .toInt()
@@ -288,6 +462,7 @@ class MainActivity : Activity() {
             }
 
             if (editar.sinal > 0) {
+
                 sinal.setText(
                     editar.sinal
                         .toInt()
@@ -296,21 +471,22 @@ class MainActivity : Activity() {
             }
         }
 
-        layout.addView(nome)
-        layout.addView(contato)
-        layout.addView(data)
-        layout.addView(horario)
-        layout.addView(tipo)
-        layout.addView(observacoes)
-        layout.addView(valor)
-        layout.addView(sinal)
+        conteudo.addView(nome)
+        conteudo.addView(contato)
+        conteudo.addView(data)
+        conteudo.addView(horario)
+        conteudo.addView(tipo)
+        conteudo.addView(observacoes)
+        conteudo.addView(valor)
+        conteudo.addView(sinal)
 
-        layout.addView(
+        conteudo.addView(
             botao(
                 if (editar == null)
                     "SALVAR AGENDAMENTO"
                 else
-                    "SALVAR ALTERAÇÕES"
+                    "SALVAR ALTERAÇÕES",
+                true
             ) {
 
                 salvarAgendamento(
@@ -327,16 +503,34 @@ class MainActivity : Activity() {
             }
         )
 
-        layout.addView(
-            botao("VOLTAR") {
+        conteudo.addView(
+            botao(
+                "VOLTAR",
+                true
+            ) {
                 telaInicial()
             }
         )
 
-        telaCentralizada(
-            layout,
-            rolagem = true
+        val parametros =
+            FrameLayout.LayoutParams(
+                -1,
+                -2,
+                Gravity.CENTER
+            )
+
+        tela.addView(
+            conteudo,
+            parametros
         )
+
+        setContentView(tela)
+
+        window.statusBarColor =
+            Color.WHITE
+
+        window.navigationBarColor =
+            Color.WHITE
     }
 
     private fun salvarAgendamento(
@@ -368,14 +562,45 @@ class MainActivity : Activity() {
         val dados =
             ContentValues()
 
-        dados.put("nome", nome)
-        dados.put("contato", contato)
-        dados.put("data", data)
-        dados.put("horario", horario)
-        dados.put("tipo", tipo)
-        dados.put("observacoes", observacoes)
-        dados.put("valor", valor)
-        dados.put("sinal", sinal)
+        dados.put(
+            "nome",
+            nome
+        )
+
+        dados.put(
+            "contato",
+            contato
+        )
+
+        dados.put(
+            "data",
+            data
+        )
+
+        dados.put(
+            "horario",
+            horario
+        )
+
+        dados.put(
+            "tipo",
+            tipo
+        )
+
+        dados.put(
+            "observacoes",
+            observacoes
+        )
+
+        dados.put(
+            "valor",
+            valor
+        )
+
+        dados.put(
+            "sinal",
+            sinal
+        )
 
         if (editar == null) {
 
@@ -439,7 +664,8 @@ class MainActivity : Activity() {
                     s: Editable?
                 ) {
 
-                    if (alterando) return
+                    if (alterando)
+                        return
 
                     val numeros =
                         s.toString()
@@ -448,7 +674,8 @@ class MainActivity : Activity() {
                             }
                             .take(11)
 
-                    if (numeros.isEmpty()) return
+                    if (numeros.isEmpty())
+                        return
 
                     val formatado =
                         when {
@@ -546,15 +773,37 @@ class MainActivity : Activity() {
 
     private fun listarAgendamentos() {
 
-        val layout =
-            telaBase()
+        val tela =
+            fundo(Color.WHITE)
 
-        layout.addView(
-            titulo("AGENDAMENTOS")
+        val conteudo =
+            LinearLayout(this).apply {
+
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER_HORIZONTAL
+
+                setPadding(
+                    35,
+                    25,
+                    35,
+                    25
+                )
+            }
+
+        conteudo.addView(
+            tituloInterno(
+                "AGENDAMENTOS"
+            )
         )
 
-        layout.addView(
-            botao("NOVO AGENDAMENTO") {
+        conteudo.addView(
+            botao(
+                "NOVO AGENDAMENTO",
+                true
+            ) {
                 novoAgendamento()
             }
         )
@@ -593,12 +842,14 @@ class MainActivity : Activity() {
 
             aviso.setPadding(
                 0,
-                30,
+                25,
                 0,
-                30
+                25
             )
 
-            layout.addView(aviso)
+            conteudo.addView(
+                aviso
+            )
 
         } else {
 
@@ -623,27 +874,44 @@ class MainActivity : Activity() {
                         cursor.getDouble(8)
                     )
 
-                layout.addView(
+                conteudo.addView(
                     cardAgendamento(
                         agendamento
                     )
                 )
 
-            } while (cursor.moveToNext())
+            } while (
+                cursor.moveToNext()
+            )
         }
 
         cursor.close()
 
-        layout.addView(
-            botao("VOLTAR") {
+        conteudo.addView(
+            botao(
+                "VOLTAR",
+                true
+            ) {
                 telaInicial()
             }
         )
 
-        telaCentralizada(
-            layout,
-            rolagem = true
+        tela.addView(
+            conteudo,
+            FrameLayout.LayoutParams(
+                -1,
+                -2,
+                Gravity.CENTER
+            )
         )
+
+        setContentView(tela)
+
+        window.statusBarColor =
+            Color.WHITE
+
+        window.navigationBarColor =
+            Color.WHITE
     }
 
     private fun cardAgendamento(
@@ -661,9 +929,9 @@ class MainActivity : Activity() {
 
         card.setPadding(
             0,
-            20,
+            15,
             0,
-            20
+            15
         )
 
         val restante =
@@ -703,17 +971,17 @@ class MainActivity : Activity() {
                 }
             }
 
-            Valor: R$ ${formatar(
-                agendamento.valor
-            )}
+            Valor: R$ ${
+                formatar(agendamento.valor)
+            }
 
-            Sinal: R$ ${formatar(
-                agendamento.sinal
-            )}
+            Sinal: R$ ${
+                formatar(agendamento.sinal)
+            }
 
-            Restante: R$ ${formatar(
-                restante
-            )}
+            Restante: R$ ${
+                formatar(restante)
+            }
 
             Observações:
             ${
@@ -728,10 +996,15 @@ class MainActivity : Activity() {
         texto.gravity =
             Gravity.CENTER
 
-        card.addView(texto)
+        card.addView(
+            texto
+        )
 
         card.addView(
-            botao("EDITAR / REAGENDAR") {
+            botao(
+                "EDITAR / REAGENDAR",
+                true
+            ) {
                 novoAgendamento(
                     agendamento
                 )
@@ -743,11 +1016,30 @@ class MainActivity : Activity() {
 
     private fun telaEntregas() {
 
-        val layout =
-            telaBase()
+        val tela =
+            fundo(Color.WHITE)
 
-        layout.addView(
-            titulo("ENTREGAS")
+        val conteudo =
+            LinearLayout(this).apply {
+
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER
+
+                setPadding(
+                    35,
+                    35,
+                    35,
+                    35
+                )
+            }
+
+        conteudo.addView(
+            tituloInterno(
+                "ENTREGAS"
+            )
         )
 
         val aviso =
@@ -763,20 +1055,40 @@ class MainActivity : Activity() {
 
         aviso.setPadding(
             0,
-            30,
+            20,
             0,
             30
         )
 
-        layout.addView(aviso)
+        conteudo.addView(
+            aviso
+        )
 
-        layout.addView(
-            botao("VOLTAR") {
+        conteudo.addView(
+            botao(
+                "VOLTAR",
+                true
+            ) {
                 telaInicial()
             }
         )
 
-        telaCentralizada(layout)
+        tela.addView(
+            conteudo,
+            FrameLayout.LayoutParams(
+                -1,
+                -2,
+                Gravity.CENTER
+            )
+        )
+
+        setContentView(tela)
+
+        window.statusBarColor =
+            Color.WHITE
+
+        window.navigationBarColor =
+            Color.WHITE
     }
 
     private fun formatar(
