@@ -176,7 +176,25 @@ class MainActivity : Activity() {
 
     private fun telaInicial() {
 
-        val layout = base()
+        val tela =
+            FrameLayout(this)
+
+        val layout =
+            LinearLayout(this).apply {
+
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER
+
+                setPadding(
+                    40,
+                    40,
+                    40,
+                    40
+                )
+            }
 
         layout.addView(
             titulo("ESTÚDIO")
@@ -200,7 +218,16 @@ class MainActivity : Activity() {
             }
         )
 
-        setContentView(layout)
+        tela.addView(
+            layout,
+            FrameLayout.LayoutParams(
+                -1,
+                -2,
+                Gravity.CENTER
+            )
+        )
+
+        setContentView(tela)
     }
 
     private fun novoAgendamento(
@@ -273,6 +300,7 @@ class MainActivity : Activity() {
             sinal.setText(
                 editar.sinal.toString()
             )
+
         } else {
 
             sinal.setText("0")
