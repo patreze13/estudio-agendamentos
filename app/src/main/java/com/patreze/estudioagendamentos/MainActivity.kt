@@ -843,7 +843,7 @@ class MainActivity : Activity() {
                 dias < 0 ->
                     "ATRASADA — ${-dias} dia(s)"
 
-                dias == 0 ->
+                dias == 0L ->
                     "VENCE HOJE"
 
                 dias <= 2 ->
