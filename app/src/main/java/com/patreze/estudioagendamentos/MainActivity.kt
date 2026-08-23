@@ -10,15 +10,11 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
-import android.text.Editable
-import android.text.InputType
-import android.text.TextWatcher
 import android.view.Gravity
 import android.widget.*
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 data class Agendamento(
     val id: Long,
@@ -90,6 +86,7 @@ class MainActivity : Activity() {
 
     private val lilasClaro = Color.rgb(232, 220, 245)
     private val lilasFundo = Color.rgb(238, 228, 248)
+    private val cinzaTexto = Color.rgb(95, 95, 95)
 
     private var telaAtual = "inicio"
 
@@ -109,6 +106,10 @@ class MainActivity : Activity() {
         }
     }
 
+    // ---------------------------------------------------------
+    // ELEMENTOS VISUAIS
+    // ---------------------------------------------------------
+
     private fun fundo(cor: Int): FrameLayout {
         return FrameLayout(this).apply {
             setBackgroundColor(cor)
@@ -120,7 +121,10 @@ class MainActivity : Activity() {
             text = "Agendamentos\nEstúdio Rafa Fraga"
             textSize = 30f
             gravity = Gravity.CENTER
-            typeface = Typeface.create("cursive", Typeface.NORMAL)
+            typeface = Typeface.create(
+                "cursive",
+                Typeface.NORMAL
+            )
             setTextColor(Color.rgb(80, 55, 90))
             setPadding(0, 0, 0, 35)
         }
@@ -129,11 +133,11 @@ class MainActivity : Activity() {
     private fun tituloInterno(texto: String): TextView {
         return TextView(this).apply {
             text = texto
-            textSize = 26f
+            textSize = 24f
             gravity = Gravity.CENTER
             typeface = Typeface.DEFAULT_BOLD
             setTextColor(Color.rgb(70, 55, 75))
-            setPadding(0, 0, 0, 25)
+            setPadding(0, 0, 0, 20)
         }
     }
 
@@ -142,7 +146,9 @@ class MainActivity : Activity() {
         interno: Boolean = false,
         acao: () -> Unit
     ): TextView {
+
         return TextView(this).apply {
+
             text = texto
             textSize = 15f
             setTextColor(Color.BLACK)
@@ -152,7 +158,10 @@ class MainActivity : Activity() {
             background = GradientDrawable().apply {
                 cornerRadius = 22f
                 setColor(
-                    if (interno) lilasClaro else Color.WHITE
+                    if (interno)
+                        lilasClaro
+                    else
+                        Color.WHITE
                 )
             }
 
@@ -169,38 +178,73 @@ class MainActivity : Activity() {
                     620,
                     65
                 ).apply {
-                    setMargins(0, 8, 0, 8)
+                    setMargins(0, 7, 0, 7)
                 }
         }
     }
 
-    private fun campo(dica: String): EditText {
+    private fun campo(
+        dica: String
+    ): EditText {
+
         return EditText(this).apply {
+
             hint = dica
             textSize = 14f
+
             setTextColor(Color.BLACK)
-            setHintTextColor(Color.rgb(150, 150, 150))
+            setHintTextColor(
+                Color.rgb(150, 150, 150)
+            )
 
-            setPadding(18, 8, 18, 8)
+            setPadding(
+                18,
+                8,
+                18,
+                8
+            )
 
-            background = GradientDrawable().apply {
-                cornerRadius = 18f
-                setColor(Color.rgb(248, 248, 248))
-                setStroke(
-                    2,
-                    Color.rgb(225, 225, 225)
-                )
-            }
+            background =
+                GradientDrawable().apply {
+
+                    cornerRadius = 18f
+
+                    setColor(
+                        Color.rgb(
+                            248,
+                            248,
+                            248
+                        )
+                    )
+
+                    setStroke(
+                        2,
+                        Color.rgb(
+                            225,
+                            225,
+                            225
+                        )
+                    )
+                }
 
             layoutParams =
                 LinearLayout.LayoutParams(
                     -1,
                     60
                 ).apply {
-                    setMargins(0, 0, 0, 10)
+                    setMargins(
+                        0,
+                        0,
+                        0,
+                        9
+                    )
                 }
         }
     }
+
+    // ---------------------------------------------------------
+    // TELA INICIAL
+    // ---------------------------------------------------------
 
     private fun telaInicial() {
 
@@ -210,13 +254,20 @@ class MainActivity : Activity() {
 
         val conteudo =
             LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER_HORIZONTAL
+
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER_HORIZONTAL
             }
 
         conteudo.addView(
             tituloPrincipal(),
-            LinearLayout.LayoutParams(-1, -2)
+            LinearLayout.LayoutParams(
+                -1,
+                -2
+            )
         )
 
         conteudo.addView(
@@ -234,6 +285,18 @@ class MainActivity : Activity() {
         conteudo.addView(
             botao("ENTREGAS") {
                 telaEntregas()
+            }
+        )
+
+        conteudo.addView(
+            botao("ENSAIOS DO MÊS") {
+                calendarioMensal(false)
+            }
+        )
+
+        conteudo.addView(
+            botao("ENTREGAS DO MÊS") {
+                calendarioMensal(true)
             }
         )
 
@@ -255,6 +318,10 @@ class MainActivity : Activity() {
         window.navigationBarColor = lilasFundo
     }
 
+    // ---------------------------------------------------------
+    // NOVO AGENDAMENTO
+    // ---------------------------------------------------------
+
     private fun novoAgendamento(
         editar: Agendamento? = null
     ) {
@@ -265,9 +332,19 @@ class MainActivity : Activity() {
 
         val conteudo =
             LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER_HORIZONTAL
-                setPadding(30, 20, 30, 20)
+
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER_HORIZONTAL
+
+                setPadding(
+                    30,
+                    15,
+                    30,
+                    15
+                )
             }
 
         conteudo.addView(
@@ -279,13 +356,16 @@ class MainActivity : Activity() {
             )
         )
 
-        val nome = campo("Nome do Cliente")
+        val nome =
+            campo("Nome do Cliente")
 
-        val contato = campo("Contato")
+        val contato =
+            campo("Contato")
 
         aplicarMascaraTelefone(contato)
 
-        val data = campo("Data do ensaio")
+        val data =
+            campo("Data do ensaio")
 
         data.isFocusable = false
         data.isClickable = true
@@ -294,7 +374,8 @@ class MainActivity : Activity() {
             escolherData(data)
         }
 
-        val horario = campo("Horário do ensaio")
+        val horario =
+            campo("Horário do ensaio")
 
         horario.isFocusable = false
         horario.isClickable = true
@@ -303,29 +384,32 @@ class MainActivity : Activity() {
             escolherHorario(horario)
         }
 
-        val tipo = campo("Tipo de ensaio")
+        val tipo =
+            campo("Tipo de ensaio")
 
-        val observacoes = campo("Observações")
+        val observacoes =
+            campo("Observações")
 
         observacoes.minLines = 3
 
         val valor =
             campo(
-                "Valor total do ensaio — somente o número"
+                "Valor total — somente o número"
             )
-
-        valor.inputType =
-            InputType.TYPE_CLASS_NUMBER
 
         val sinal =
             campo(
-                "Valor do SINAL — somente o número"
+                "Sinal — somente o número"
             )
 
+        valor.inputType =
+            android.text.InputType.TYPE_CLASS_NUMBER
+
         sinal.inputType =
-            InputType.TYPE_CLASS_NUMBER
+            android.text.InputType.TYPE_CLASS_NUMBER
 
         if (editar != null) {
+
             nome.setText(editar.nome)
             contato.setText(editar.contato)
             data.setText(editar.data)
@@ -363,6 +447,7 @@ class MainActivity : Activity() {
                     "SALVAR ALTERAÇÕES",
                 true
             ) {
+
                 salvarAgendamento(
                     editar,
                     nome.text.toString().trim(),
@@ -377,19 +462,19 @@ class MainActivity : Activity() {
             }
         )
 
-        /*
-         * NOVO:
-         * Quando estiver editando um agendamento ainda não realizado,
-         * aparece a opção para registrar que o ensaio aconteceu.
-         */
-        if (editar != null && !editar.realizado) {
+        if (
+            editar != null &&
+            !editar.realizado
+        ) {
 
             conteudo.addView(
                 botao(
                     "ENSAIO REALIZADO",
                     true
                 ) {
-                    marcarEnsaioRealizado(editar.id)
+                    marcarEnsaioRealizado(
+                        editar.id
+                    )
                 }
             )
         }
@@ -399,7 +484,7 @@ class MainActivity : Activity() {
                 "VOLTAR",
                 true
             ) {
-                telaInicial()
+                listarAgendamentos()
             }
         )
 
@@ -418,6 +503,10 @@ class MainActivity : Activity() {
         window.navigationBarColor = Color.WHITE
     }
 
+    // ---------------------------------------------------------
+    // SALVAR
+    // ---------------------------------------------------------
+
     private fun salvarAgendamento(
         editar: Agendamento?,
         nome: String,
@@ -431,12 +520,15 @@ class MainActivity : Activity() {
     ) {
 
         val valor =
-            valorTexto.toDoubleOrNull() ?: 0.0
+            valorTexto.toDoubleOrNull()
+                ?: 0.0
 
         val sinal =
-            sinalTexto.toDoubleOrNull() ?: 0.0
+            sinalTexto.toDoubleOrNull()
+                ?: 0.0
 
-        val dados = ContentValues()
+        val dados =
+            ContentValues()
 
         dados.put("nome", nome)
         dados.put("contato", contato)
@@ -457,7 +549,7 @@ class MainActivity : Activity() {
 
             Toast.makeText(
                 this,
-                "Agendamento cadastrado com sucesso.",
+                "Agendamento cadastrado.",
                 Toast.LENGTH_SHORT
             ).show()
 
@@ -467,7 +559,9 @@ class MainActivity : Activity() {
                 "agendamentos",
                 dados,
                 "id = ?",
-                arrayOf(editar.id.toString())
+                arrayOf(
+                    editar.id.toString()
+                )
             )
 
             Toast.makeText(
@@ -480,82 +574,9 @@ class MainActivity : Activity() {
         listarAgendamentos()
     }
 
-    private fun marcarEnsaioRealizado(id: Long) {
-
-        val cursor =
-            banco.readableDatabase.rawQuery(
-                "SELECT data FROM agendamentos WHERE id = ?",
-                arrayOf(id.toString())
-            )
-
-        var dataEnsaio = ""
-
-        if (cursor.moveToFirst()) {
-            dataEnsaio =
-                cursor.getString(0) ?: ""
-        }
-
-        cursor.close()
-
-        val prazo =
-            calcularPrazo(dataEnsaio)
-
-        val dados = ContentValues()
-
-        dados.put("realizado", 1)
-        dados.put("prazo_entrega", prazo)
-        dados.put("entrega_realizada", 0)
-
-        banco.writableDatabase.update(
-            "agendamentos",
-            dados,
-            "id = ?",
-            arrayOf(id.toString())
-        )
-
-        Toast.makeText(
-            this,
-            "Ensaio marcado como realizado. Prazo: $prazo",
-            Toast.LENGTH_LONG
-        ).show()
-
-        listarAgendamentos()
-    }
-
-    private fun calcularPrazo(
-        data: String
-    ): String {
-
-        return try {
-
-            val formato =
-                SimpleDateFormat(
-                    "dd/MM/yyyy",
-                    Locale("pt", "BR")
-                )
-
-            val dataOriginal =
-                formato.parse(data)
-
-            val calendario =
-                Calendar.getInstance()
-
-            calendario.time = dataOriginal!!
-
-            calendario.add(
-                Calendar.DAY_OF_MONTH,
-                7
-            )
-
-            formato.format(
-                calendario.time
-            )
-
-        } catch (_: Exception) {
-
-            ""
-        }
-    }
+    // ---------------------------------------------------------
+    // MASCARA TELEFONE
+    // ---------------------------------------------------------
 
     private fun aplicarMascaraTelefone(
         campo: EditText
@@ -589,10 +610,14 @@ class MainActivity : Activity() {
 
                     val numeros =
                         s.toString()
-                            .filter { it.isDigit() }
+                            .filter {
+                                it.isDigit()
+                            }
                             .take(11)
 
-                    if (numeros.isEmpty())
+                    if (
+                        numeros.isEmpty()
+                    )
                         return
 
                     val formatado =
@@ -613,12 +638,15 @@ class MainActivity : Activity() {
                         }
 
                     if (
-                        formatado != s.toString()
+                        formatado !=
+                        s.toString()
                     ) {
 
                         alterando = true
 
-                        campo.setText(formatado)
+                        campo.setText(
+                            formatado
+                        )
 
                         campo.setSelection(
                             formatado.length
@@ -630,6 +658,10 @@ class MainActivity : Activity() {
             }
         )
     }
+
+    // ---------------------------------------------------------
+    // DATA / HORA
+    // ---------------------------------------------------------
 
     private fun escolherData(
         campo: EditText
@@ -686,24 +718,203 @@ class MainActivity : Activity() {
         ).show()
     }
 
+    // ---------------------------------------------------------
+    // MARCAR ENSAIO REALIZADO
+    // ---------------------------------------------------------
+
+    private fun marcarEnsaioRealizado(
+        id: Long
+    ) {
+
+        val cursor =
+            banco.readableDatabase.rawQuery(
+                "SELECT data FROM agendamentos WHERE id = ?",
+                arrayOf(
+                    id.toString()
+                )
+            )
+
+        var dataEnsaio = ""
+
+        if (cursor.moveToFirst()) {
+            dataEnsaio =
+                cursor.getString(0)
+                    ?: ""
+        }
+
+        cursor.close()
+
+        val prazo =
+            calcularPrazo(dataEnsaio)
+
+        val dados =
+            ContentValues()
+
+        dados.put(
+            "realizado",
+            1
+        )
+
+        dados.put(
+            "prazo_entrega",
+            prazo
+        )
+
+        dados.put(
+            "entrega_realizada",
+            0
+        )
+
+        banco.writableDatabase.update(
+            "agendamentos",
+            dados,
+            "id = ?",
+            arrayOf(
+                id.toString()
+            )
+        )
+
+        Toast.makeText(
+            this,
+            "Ensaio realizado. Prazo: $prazo",
+            Toast.LENGTH_LONG
+        ).show()
+
+        listarAgendamentos()
+    }
+
+    private fun calcularPrazo(
+        data: String
+    ): String {
+
+        return try {
+
+            val formato =
+                SimpleDateFormat(
+                    "dd/MM/yyyy",
+                    Locale("pt", "BR")
+                )
+
+            val dataOriginal =
+                formato.parse(data)
+
+            val calendario =
+                Calendar.getInstance()
+
+            calendario.time =
+                dataOriginal!!
+
+            calendario.add(
+                Calendar.DAY_OF_MONTH,
+                7
+            )
+
+            formato.format(
+                calendario.time
+            )
+
+        } catch (_: Exception) {
+
+            ""
+        }
+    }
+
+    // ---------------------------------------------------------
+    // BUSCAR TODOS OS AGENDAMENTOS
+    // ---------------------------------------------------------
+
+    private fun buscarTodos(): MutableList<Agendamento> {
+
+        val lista =
+            mutableListOf<Agendamento>()
+
+        val cursor =
+            banco.readableDatabase.rawQuery(
+                """
+                SELECT
+                    id,
+                    nome,
+                    contato,
+                    data,
+                    horario,
+                    tipo,
+                    observacoes,
+                    valor,
+                    sinal,
+                    realizado,
+                    prazo_entrega,
+                    entrega_realizada
+                FROM agendamentos
+                """.trimIndent(),
+                null
+            )
+
+        if (cursor.moveToFirst()) {
+
+            do {
+
+                lista.add(
+                    Agendamento(
+                        cursor.getLong(0),
+                        cursor.getString(1) ?: "",
+                        cursor.getString(2) ?: "",
+                        cursor.getString(3) ?: "",
+                        cursor.getString(4) ?: "",
+                        cursor.getString(5) ?: "",
+                        cursor.getString(6) ?: "",
+                        cursor.getDouble(7),
+                        cursor.getDouble(8),
+                        cursor.getInt(9) == 1,
+                        cursor.getString(10),
+                        cursor.getInt(11) == 1
+                    )
+                )
+
+            } while (
+                cursor.moveToNext()
+            )
+        }
+
+        cursor.close()
+
+        return lista
+    }
+
+    // ---------------------------------------------------------
+    // AGENDAMENTOS
+    // ---------------------------------------------------------
+
     private fun listarAgendamentos() {
 
         telaAtual = "agendamentos"
 
-        val tela = fundo(Color.WHITE)
+        val tela =
+            fundo(Color.WHITE)
 
-        val conteudo =
+        val principal =
             LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER_HORIZONTAL
-                setPadding(35, 25, 35, 25)
+
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER_HORIZONTAL
+
+                setPadding(
+                    25,
+                    20,
+                    25,
+                    20
+                )
             }
 
-        conteudo.addView(
-            tituloInterno("AGENDAMENTOS")
+        principal.addView(
+            tituloInterno(
+                "AGENDAMENTOS"
+            )
         )
 
-        conteudo.addView(
+        principal.addView(
             botao(
                 "NOVO AGENDAMENTO",
                 true
@@ -712,79 +923,85 @@ class MainActivity : Activity() {
             }
         )
 
-        val cursor =
-            banco.readableDatabase.rawQuery(
-                """
-                SELECT
-                    id,
-                    nome,
-                    contato,
-                    data,
-                    horario,
-                    tipo,
-                    observacoes,
-                    valor,
-                    sinal,
-                    realizado,
-                    prazo_entrega,
-                    entrega_realizada
-                FROM agendamentos
-                ORDER BY data, horario
-                """.trimIndent(),
-                null
-            )
+        val lista =
+            buscarTodos()
+                .filter {
+                    !it.realizado
+                }
+                .sortedWith(
+                    compareBy<Agendamento> {
+                        dataOrdenacao(
+                            it.data
+                        )
+                    }.thenBy {
+                        it.horario
+                    }
+                )
 
-        if (!cursor.moveToFirst()) {
+        if (lista.isEmpty()) {
 
-            val aviso = TextView(this)
+            val aviso =
+                TextView(this).apply {
 
-            aviso.text =
-                "Nenhum agendamento cadastrado."
+                    text =
+                        "Nenhum agendamento pendente."
 
-            aviso.textSize = 17f
-            aviso.gravity = Gravity.CENTER
+                    textSize = 17f
 
-            aviso.setPadding(
-                0,
-                25,
-                0,
-                25
-            )
+                    gravity =
+                        Gravity.CENTER
 
-            conteudo.addView(aviso)
+                    setTextColor(
+                        cinzaTexto
+                    )
+
+                    setPadding(
+                        0,
+                        25,
+                        0,
+                        25
+                    )
+                }
+
+            principal.addView(aviso)
 
         } else {
 
-            do {
+            val grade =
+                GridLayout(this).apply {
 
-                val agendamento =
-                    Agendamento(
-                        cursor.getLong(0),
-                        cursor.getString(1) ?: "",
-                        cursor.getString(2) ?: "",
-                        cursor.getString(3) ?: "",
-                        cursor.getString(4) ?: "",
-                        cursor.getString(5) ?: "",
-                        cursor.getString(6) ?: "",
-                        cursor.getDouble(7),
-                        cursor.getDouble(8),
-                        cursor.getInt(9) == 1,
-                        cursor.getString(10),
-                        cursor.getInt(11) == 1
-                    )
+                    columnCount = 2
 
-                conteudo.addView(
-                    cardAgendamento(
+                    rowCount =
+                        (lista.size + 1) / 2
+
+                    alignmentMode =
+                        GridLayout.ALIGN_BOUNDS
+
+                    useDefaultMargins = false
+
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            -1,
+                            -2
+                        )
+                }
+
+            lista.forEach { agendamento ->
+
+                grade.addView(
+                    cartaoAgendamento(
                         agendamento
                     )
                 )
+            }
 
-            } while (cursor.moveToNext())
+            principal.addView(
+                grade
+            )
         }
 
-        cursor.close()
-
-        conteudo.addView(
+        principal.addView(
             botao(
                 "VOLTAR",
                 true
@@ -794,7 +1011,7 @@ class MainActivity : Activity() {
         )
 
         tela.addView(
-            conteudo,
+            principal,
             FrameLayout.LayoutParams(
                 -1,
                 -2,
@@ -803,215 +1020,294 @@ class MainActivity : Activity() {
         )
 
         setContentView(tela)
-
-        window.statusBarColor = Color.WHITE
-        window.navigationBarColor = Color.WHITE
     }
 
-    private fun cardAgendamento(
+    // ---------------------------------------------------------
+    // CARTAO DE AGENDAMENTO
+    // ---------------------------------------------------------
+
+    private fun cartaoAgendamento(
         agendamento: Agendamento
     ): LinearLayout {
 
         val card =
-            LinearLayout(this)
+            LinearLayout(this).apply {
 
-        card.orientation =
-            LinearLayout.VERTICAL
+                orientation =
+                    LinearLayout.VERTICAL
 
-        card.gravity =
-            Gravity.CENTER_HORIZONTAL
+                gravity =
+                    Gravity.CENTER
 
-        card.setPadding(
-            0,
-            15,
-            0,
-            15
+                setPadding(
+                    12,
+                    15,
+                    12,
+                    15
+                )
+
+                background =
+                    GradientDrawable().apply {
+
+                        cornerRadius = 18f
+
+                        setColor(
+                            Color.rgb(
+                                250,
+                                250,
+                                250
+                            )
+                        )
+
+                        setStroke(
+                            2,
+                            Color.rgb(
+                                205,
+                                190,
+                                215
+                            )
+                        )
+                    }
+
+                isClickable = true
+                isFocusable = true
+            }
+
+        val largura =
+            resources.displayMetrics.widthPixels
+
+        val tamanho =
+            (largura - 80) / 2
+
+        val parametros =
+            GridLayout.LayoutParams().apply {
+
+                width =
+                    tamanho
+
+                height =
+                    GridLayout.LayoutParams.WRAP_CONTENT
+
+                setMargins(
+                    6,
+                    6,
+                    6,
+                    6
+                )
+            }
+
+        card.layoutParams =
+            parametros
+
+        val nome =
+            TextView(this).apply {
+
+                text =
+                    agendamento.nome.ifBlank {
+                        "Cliente sem nome"
+                    }
+
+                textSize = 15f
+
+                typeface =
+                    Typeface.DEFAULT_BOLD
+
+                setTextColor(
+                    Color.BLACK
+                )
+
+                gravity =
+                    Gravity.CENTER
+            }
+
+        val data =
+            TextView(this).apply {
+
+                text =
+                    if (
+                        agendamento.data.isBlank()
+                    )
+                        "Data não informada"
+                    else
+                        agendamento.data
+
+                textSize = 13f
+
+                setTextColor(
+                    cinzaTexto
+                )
+
+                gravity =
+                    Gravity.CENTER
+            }
+
+        val horario =
+            TextView(this).apply {
+
+                text =
+                    if (
+                        agendamento.horario.isBlank()
+                    )
+                        "Horário não informado"
+                    else
+                        agendamento.horario
+
+                textSize = 13f
+
+                setTextColor(
+                    cinzaTexto
+                )
+
+                gravity =
+                    Gravity.CENTER
+            }
+
+        card.addView(nome)
+        card.addView(data)
+        card.addView(horario)
+
+        card.setOnClickListener {
+
+            detalhesAgendamento(
+                agendamento
+            )
+        }
+
+        return card
+    }
+
+    // ---------------------------------------------------------
+    // DETALHES DO AGENDAMENTO
+    // ---------------------------------------------------------
+
+    private fun detalhesAgendamento(
+        agendamento: Agendamento
+    ) {
+
+        telaAtual =
+            "detalhes_agendamento"
+
+        val tela =
+            fundo(Color.WHITE)
+
+        val conteudo =
+            LinearLayout(this).apply {
+
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER
+
+                setPadding(
+                    30,
+                    20,
+                    30,
+                    20
+                )
+        }
+
+        conteudo.addView(
+            tituloInterno(
+                agendamento.nome.ifBlank {
+                    "Detalhes do agendamento"
+                }
+            )
         )
 
         val restante =
             agendamento.valor -
                 agendamento.sinal
 
-        val status =
-            if (agendamento.realizado)
-                "ENSAIO REALIZADO"
-            else
-                "ENSAIO PENDENTE"
+        val detalhes =
+            TextView(this).apply {
 
-        val texto =
-            TextView(this)
+                text =
+                    """
+                    Contato:
+                    ${agendamento.contato.ifBlank {
+                        "Não informado"
+                    }}
 
-        texto.text =
-            """
-            ${agendamento.nome.ifBlank {
-                "Cliente sem nome"
-            }}
+                    Data:
+                    ${agendamento.data.ifBlank {
+                        "Não informada"
+                    }}
 
-            Contato: ${
-                agendamento.contato.ifBlank {
-                    "Não informado"
-                }
+                    Horário:
+                    ${agendamento.horario.ifBlank {
+                        "Não informado"
+                    }}
+
+                    Tipo:
+                    ${agendamento.tipo.ifBlank {
+                        "Não informado"
+                    }}
+
+                    Valor:
+                    R$ ${formatar(agendamento.valor)}
+
+                    Sinal:
+                    R$ ${formatar(agendamento.sinal)}
+
+                    Restante:
+                    R$ ${formatar(restante)}
+
+                    Observações:
+                    ${agendamento.observacoes.ifBlank {
+                        "Nenhuma"
+                    }}
+                    """.trimIndent()
+
+                textSize = 15f
+
+                setTextColor(
+                    Color.DKGRAY
+                )
+
+                gravity =
+                    Gravity.CENTER
+
+                setPadding(
+                    0,
+                    10,
+                    0,
+                    20
+                )
             }
 
-            Data: ${
-                agendamento.data.ifBlank {
-                    "Não informada"
-                }
-            }
+        conteudo.addView(
+            detalhes
+        )
 
-            Horário: ${
-                agendamento.horario.ifBlank {
-                    "Não informado"
-                }
-            }
-
-            Tipo: ${
-                agendamento.tipo.ifBlank {
-                    "Não informado"
-                }
-            }
-
-            Valor: R$ ${formatar(agendamento.valor)}
-
-            Sinal: R$ ${formatar(agendamento.sinal)}
-
-            Restante: R$ ${formatar(restante)}
-
-            Status: $status
-
-            Observações:
-            ${
-                agendamento.observacoes.ifBlank {
-                    "Nenhuma"
-                }
-            }
-            """.trimIndent()
-
-        texto.textSize = 16f
-        texto.gravity = Gravity.CENTER
-
-        card.addView(texto)
-
-        card.addView(
+        conteudo.addView(
             botao(
                 "EDITAR / REAGENDAR",
                 true
             ) {
-                novoAgendamento(agendamento)
+                novoAgendamento(
+                    agendamento
+                )
             }
         )
-
-        if (!agendamento.realizado) {
-
-            card.addView(
-                botao(
-                    "ENSAIO REALIZADO",
-                    true
-                ) {
-                    marcarEnsaioRealizado(
-                        agendamento.id
-                    )
-                }
-            )
-        }
-
-        return card
-    }
-
-    private fun telaEntregas() {
-
-        telaAtual = "entregas"
-
-        val tela = fundo(Color.WHITE)
-
-        val conteudo =
-            LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                gravity = Gravity.CENTER_HORIZONTAL
-                setPadding(35, 25, 35, 25)
-            }
 
         conteudo.addView(
-            tituloInterno("ENTREGAS")
-        )
-
-        val cursor =
-            banco.readableDatabase.rawQuery(
-                """
-                SELECT
-                    id,
-                    nome,
-                    contato,
-                    data,
-                    horario,
-                    tipo,
-                    observacoes,
-                    valor,
-                    sinal,
-                    realizado,
-                    prazo_entrega,
-                    entrega_realizada
-                FROM agendamentos
-                WHERE realizado = 1
-                ORDER BY entrega_realizada, prazo_entrega
-                """.trimIndent(),
-                null
-            )
-
-        if (!cursor.moveToFirst()) {
-
-            val aviso = TextView(this)
-
-            aviso.text =
-                "Nenhuma entrega pendente."
-
-            aviso.textSize = 17f
-            aviso.gravity = Gravity.CENTER
-
-            aviso.setPadding(
-                0,
-                25,
-                0,
-                25
-            )
-
-            conteudo.addView(aviso)
-
-        } else {
-
-            do {
-
-                val agendamento =
-                    Agendamento(
-                        cursor.getLong(0),
-                        cursor.getString(1) ?: "",
-                        cursor.getString(2) ?: "",
-                        cursor.getString(3) ?: "",
-                        cursor.getString(4) ?: "",
-                        cursor.getString(5) ?: "",
-                        cursor.getString(6) ?: "",
-                        cursor.getDouble(7),
-                        cursor.getDouble(8),
-                        cursor.getInt(9) == 1,
-                        cursor.getString(10),
-                        cursor.getInt(11) == 1
-                    )
-
-                conteudo.addView(
-                    cardEntrega(agendamento)
+            botao(
+                "ENSAIO REALIZADO",
+                true
+            ) {
+                marcarEnsaioRealizado(
+                    agendamento.id
                 )
-
-            } while (cursor.moveToNext())
-        }
-
-        cursor.close()
+            }
+        )
 
         conteudo.addView(
             botao(
                 "VOLTAR",
                 true
             ) {
-                telaInicial()
+                listarAgendamentos()
             }
         )
 
@@ -1025,94 +1321,531 @@ class MainActivity : Activity() {
         )
 
         setContentView(tela)
-
-        window.statusBarColor = Color.WHITE
-        window.navigationBarColor = Color.WHITE
     }
 
-    private fun cardEntrega(
+    // ---------------------------------------------------------
+    // ENTREGAS
+    // ---------------------------------------------------------
+
+    private fun telaEntregas() {
+
+        telaAtual =
+            "entregas"
+
+        val tela =
+            fundo(Color.WHITE)
+
+        val principal =
+            LinearLayout(this).apply {
+
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER_HORIZONTAL
+
+                setPadding(
+                    25,
+                    20,
+                    25,
+                    20
+                )
+            }
+
+        principal.addView(
+            tituloInterno(
+                "ENTREGAS"
+            )
+        )
+
+        val lista =
+            buscarTodos()
+                .filter {
+                    it.realizado &&
+                        !it.entregaRealizada
+                }
+                .sortedBy {
+                    dataOrdenacao(
+                        it.prazoEntrega
+                            ?: ""
+                    )
+                }
+
+        if (lista.isEmpty()) {
+
+            val aviso =
+                TextView(this).apply {
+
+                    text =
+                        "Nenhuma entrega pendente."
+
+                    textSize = 17f
+
+                    gravity =
+                        Gravity.CENTER
+
+                    setTextColor(
+                        cinzaTexto
+                    )
+
+                    setPadding(
+                        0,
+                        25,
+                        0,
+                        25
+                    )
+                }
+
+            principal.addView(aviso)
+
+        } else {
+
+            val grade =
+                GridLayout(this).apply {
+
+                    columnCount = 2
+
+                    rowCount =
+                        (lista.size + 1) / 2
+
+                    useDefaultMargins = false
+
+                    layoutParams =
+                        LinearLayout.LayoutParams(
+                            -1,
+                            -2
+                        )
+                }
+
+            lista.forEach { agendamento ->
+
+                grade.addView(
+                    cartaoEntrega(
+                        agendamento
+                    )
+                )
+            }
+
+            principal.addView(
+                grade
+            )
+        }
+
+        principal.addView(
+            botao(
+                "VOLTAR",
+                true
+            ) {
+                telaInicial()
+            }
+        )
+
+        tela.addView(
+            principal,
+            FrameLayout.LayoutParams(
+                -1,
+                -2,
+                Gravity.CENTER
+            )
+        )
+
+        setContentView(tela)
+    }
+
+    // ---------------------------------------------------------
+    // CARTAO DE ENTREGA
+    // ---------------------------------------------------------
+
+    private fun cartaoEntrega(
         agendamento: Agendamento
     ): LinearLayout {
 
         val card =
-            LinearLayout(this)
+            LinearLayout(this).apply {
 
-        card.orientation =
-            LinearLayout.VERTICAL
+                orientation =
+                    LinearLayout.VERTICAL
 
-        card.gravity =
-            Gravity.CENTER_HORIZONTAL
+                gravity =
+                    Gravity.CENTER
 
-        card.setPadding(
-            0,
-            15,
-            0,
-            15
-        )
+                setPadding(
+                    10,
+                    15,
+                    10,
+                    15
+                )
+
+                background =
+                    GradientDrawable().apply {
+
+                        cornerRadius = 18f
+
+                        setColor(
+                            Color.rgb(
+                                250,
+                                250,
+                                250
+                            )
+                        )
+
+                        setStroke(
+                            2,
+                            Color.rgb(
+                                205,
+                                190,
+                                215
+                            )
+                        )
+                    }
+
+                isClickable = true
+                isFocusable = true
+            }
+
+        val largura =
+            resources.displayMetrics.widthPixels
+
+        val tamanho =
+            (largura - 80) / 2
+
+        card.layoutParams =
+            GridLayout.LayoutParams().apply {
+
+                width =
+                    tamanho
+
+                height =
+                    GridLayout.LayoutParams.WRAP_CONTENT
+
+                setMargins(
+                    6,
+                    6,
+                    6,
+                    6
+                )
+            }
+
+        val nome =
+            TextView(this).apply {
+
+                text =
+                    agendamento.nome.ifBlank {
+                        "Cliente sem nome"
+                    }
+
+                textSize = 15f
+
+                typeface =
+                    Typeface.DEFAULT_BOLD
+
+                setTextColor(
+                    Color.BLACK
+                )
+
+                gravity =
+                    Gravity.CENTER
+            }
 
         val prazo =
             agendamento.prazoEntrega
                 ?: "Não definido"
 
-        val texto =
-            TextView(this)
+        val prazoTexto =
+            TextView(this).apply {
 
-        texto.text =
-            """
-            ${agendamento.nome.ifBlank {
-                "Cliente sem nome"
-            }}
+                text =
+                    "Prazo: $prazo"
 
-            Ensaio: ${
-                agendamento.data.ifBlank {
-                    "Não informado"
-                }
+                textSize = 13f
+
+                setTextColor(
+                    cinzaTexto
+                )
+
+                gravity =
+                    Gravity.CENTER
             }
 
-            Prazo de entrega: $prazo
+        val contagem =
+            TextView(this).apply {
 
-            Status: ${
-                if (agendamento.entregaRealizada)
-                    "ENTREGA REALIZADA"
-                else
-                    "ENTREGA PENDENTE"
+                text =
+                    calcularContagem(
+                        prazo
+                    )
+
+                textSize = 14f
+
+                typeface =
+                    Typeface.DEFAULT_BOLD
+
+                setTextColor(
+                    Color.rgb(
+                        95,
+                        60,
+                        110
+                    )
+                )
+
+                gravity =
+                    Gravity.CENTER
             }
-            """.trimIndent()
 
-        texto.textSize = 16f
-        texto.gravity = Gravity.CENTER
+        card.addView(nome)
+        card.addView(prazoTexto)
+        card.addView(contagem)
 
-        card.addView(texto)
+        card.setOnClickListener {
 
-        if (!agendamento.entregaRealizada) {
-
-            card.addView(
-                botao(
-                    "ALTERAR PRAZO",
-                    true
-                ) {
-                    alterarPrazo(
-                        agendamento.id
-                    )
-                }
-            )
-
-            card.addView(
-                botao(
-                    "ENTREGA REALIZADA",
-                    true
-                ) {
-                    marcarEntregaRealizada(
-                        agendamento.id
-                    )
-                }
+            detalhesEntrega(
+                agendamento
             )
         }
 
         return card
     }
 
-    private fun alterarPrazo(id: Long) {
+    // ---------------------------------------------------------
+    // DETALHES DA ENTREGA
+    // ---------------------------------------------------------
+
+    private fun detalhesEntrega(
+        agendamento: Agendamento
+    ) {
+
+        telaAtual =
+            "detalhes_entrega"
+
+        val tela =
+            fundo(Color.WHITE)
+
+        val conteudo =
+            LinearLayout(this).apply {
+
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER
+
+                setPadding(
+                    30,
+                    20,
+                    30,
+                    20
+                )
+            }
+
+        conteudo.addView(
+            tituloInterno(
+                agendamento.nome.ifBlank {
+                    "Entrega"
+                }
+            )
+        )
+
+        val prazo =
+            agendamento.prazoEntrega
+                ?: "Não definido"
+
+        val detalhes =
+            TextView(this).apply {
+
+                text =
+                    """
+                    Cliente:
+                    ${agendamento.nome.ifBlank {
+                        "Não informado"
+                    }}
+
+                    Data do ensaio:
+                    ${agendamento.data.ifBlank {
+                        "Não informada"
+                    }}
+
+                    Prazo máximo:
+                    $prazo
+
+                    ${calcularContagem(prazo)}
+                    """.trimIndent()
+
+                textSize = 16f
+
+                setTextColor(
+                    Color.DKGRAY
+                )
+
+                gravity =
+                    Gravity.CENTER
+
+                setPadding(
+                    0,
+                    10,
+                    0,
+                    20
+                )
+            }
+
+        conteudo.addView(
+            detalhes
+        )
+
+        conteudo.addView(
+            botao(
+                "ALTERAR PRAZO",
+                true
+            ) {
+                alterarPrazo(
+                    agendamento.id
+                )
+            }
+        )
+
+        conteudo.addView(
+            botao(
+                "ENTREGA REALIZADA",
+                true
+            ) {
+                marcarEntregaRealizada(
+                    agendamento.id
+                )
+            }
+        )
+
+        conteudo.addView(
+            botao(
+                "VOLTAR",
+                true
+            ) {
+                telaEntregas()
+            }
+        )
+
+        tela.addView(
+            conteudo,
+            FrameLayout.LayoutParams(
+                -1,
+                -2,
+                Gravity.CENTER
+            )
+        )
+
+        setContentView(tela)
+    }
+
+    // ---------------------------------------------------------
+    // CONTAGEM REGRESSIVA
+    // ---------------------------------------------------------
+
+    private fun calcularContagem(
+        prazo: String
+    ): String {
+
+        if (prazo.isBlank())
+            return "Prazo não definido"
+
+        return try {
+
+            val formato =
+                SimpleDateFormat(
+                    "dd/MM/yyyy",
+                    Locale("pt", "BR")
+                )
+
+            formato.isLenient = false
+
+            val dataPrazo =
+                formato.parse(prazo)
+
+            val hoje =
+                Calendar.getInstance()
+
+            hoje.set(
+                Calendar.HOUR_OF_DAY,
+                0
+            )
+
+            hoje.set(
+                Calendar.MINUTE,
+                0
+            )
+
+            hoje.set(
+                Calendar.SECOND,
+                0
+            )
+
+            hoje.set(
+                Calendar.MILLISECOND,
+                0
+            )
+
+            val prazoCalendario =
+                Calendar.getInstance()
+
+            prazoCalendario.time =
+                dataPrazo!!
+
+            prazoCalendario.set(
+                Calendar.HOUR_OF_DAY,
+                0
+            )
+
+            prazoCalendario.set(
+                Calendar.MINUTE,
+                0
+            )
+
+            prazoCalendario.set(
+                Calendar.SECOND,
+                0
+            )
+
+            prazoCalendario.set(
+                Calendar.MILLISECOND,
+                0
+            )
+
+            val diferenca =
+                prazoCalendario.timeInMillis -
+                    hoje.timeInMillis
+
+            val dias =
+                diferenca /
+                    (24L * 60L * 60L * 1000L)
+
+            when {
+
+                dias > 1 ->
+                    "Faltam $dias dias"
+
+                dias == 1L ->
+                    "Falta 1 dia"
+
+                dias == 0L ->
+                    "VENCE HOJE"
+
+                dias == -1L ->
+                    "Vencido há 1 dia"
+
+                else ->
+                    "Vencido há ${-dias} dias"
+            }
+
+        } catch (_: Exception) {
+
+            "Prazo inválido"
+        }
+    }
+
+    // ---------------------------------------------------------
+    // ALTERAR PRAZO
+    // ---------------------------------------------------------
+
+    private fun alterarPrazo(
+        id: Long
+    ) {
 
         val calendario =
             Calendar.getInstance()
@@ -1142,19 +1875,33 @@ class MainActivity : Activity() {
                     "agendamentos",
                     dados,
                     "id = ?",
-                    arrayOf(id.toString())
+                    arrayOf(
+                        id.toString()
+                    )
                 )
 
                 telaEntregas()
 
             },
-            calendario.get(Calendar.YEAR),
-            calendario.get(Calendar.MONTH),
-            calendario.get(Calendar.DAY_OF_MONTH)
+            calendario.get(
+                Calendar.YEAR
+            ),
+            calendario.get(
+                Calendar.MONTH
+            ),
+            calendario.get(
+                Calendar.DAY_OF_MONTH
+            )
         ).show()
     }
 
-    private fun marcarEntregaRealizada(id: Long) {
+    // ---------------------------------------------------------
+    // MARCAR ENTREGA
+    // ---------------------------------------------------------
+
+    private fun marcarEntregaRealizada(
+        id: Long
+    ) {
 
         val dados =
             ContentValues()
@@ -1168,7 +1915,9 @@ class MainActivity : Activity() {
             "agendamentos",
             dados,
             "id = ?",
-            arrayOf(id.toString())
+            arrayOf(
+                id.toString()
+            )
         )
 
         Toast.makeText(
@@ -1179,6 +1928,675 @@ class MainActivity : Activity() {
 
         telaEntregas()
     }
+
+    // ---------------------------------------------------------
+    // CALENDÁRIO MENSAL
+    // ---------------------------------------------------------
+
+    private fun calendarioMensal(
+        entregas: Boolean
+    ) {
+
+        telaAtual =
+            if (entregas)
+                "calendario_entregas"
+            else
+                "calendario_ensaios"
+
+        val calendario =
+            Calendar.getInstance()
+
+        mostrarMes(
+            calendario.get(Calendar.YEAR),
+            calendario.get(Calendar.MONTH),
+            entregas
+        )
+    }
+
+    private fun mostrarMes(
+        ano: Int,
+        mes: Int,
+        entregas: Boolean
+    ) {
+
+        val tela =
+            fundo(Color.WHITE)
+
+        val principal =
+            LinearLayout(this).apply {
+
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER_HORIZONTAL
+
+                setPadding(
+                    25,
+                    20,
+                    25,
+                    20
+                )
+            }
+
+        principal.addView(
+            tituloInterno(
+                if (entregas)
+                    "ENTREGAS DO MÊS"
+                else
+                    "ENSAIOS DO MÊS"
+            )
+        )
+
+        val navegacao =
+            LinearLayout(this).apply {
+
+                orientation =
+                    LinearLayout.HORIZONTAL
+
+                gravity =
+                    Gravity.CENTER
+
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        -1,
+                        65
+                    )
+            }
+
+        val anterior =
+            TextView(this).apply {
+
+                text = "‹"
+
+                textSize = 35f
+
+                gravity =
+                    Gravity.CENTER
+
+                setTextColor(
+                    Color.BLACK
+                )
+
+                setOnClickListener {
+
+                    val novoMes =
+                        Calendar.getInstance()
+
+                    novoMes.set(
+                        ano,
+                        mes,
+                        1
+                    )
+
+                    novoMes.add(
+                        Calendar.MONTH,
+                        -1
+                    )
+
+                    mostrarMes(
+                        novoMes.get(
+                            Calendar.YEAR
+                        ),
+                        novoMes.get(
+                            Calendar.MONTH
+                        ),
+                        entregas
+                    )
+                }
+
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        90,
+                        65
+                    )
+            }
+
+        val nomeMes =
+            TextView(this).apply {
+
+                text =
+                    nomeDoMes(
+                        mes,
+                        ano
+                    )
+
+                textSize = 20f
+
+                typeface =
+                    Typeface.DEFAULT_BOLD
+
+                gravity =
+                    Gravity.CENTER
+
+                setTextColor(
+                    Color.rgb(
+                        70,
+                        55,
+                        75
+                    )
+                )
+
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        0,
+                        65,
+                        1f
+                    )
+            }
+
+        val proximo =
+            TextView(this).apply {
+
+                text = "›"
+
+                textSize = 35f
+
+                gravity =
+                    Gravity.CENTER
+
+                setTextColor(
+                    Color.BLACK
+                )
+
+                setOnClickListener {
+
+                    val novoMes =
+                        Calendar.getInstance()
+
+                    novoMes.set(
+                        ano,
+                        mes,
+                        1
+                    )
+
+                    novoMes.add(
+                        Calendar.MONTH,
+                        1
+                    )
+
+                    mostrarMes(
+                        novoMes.get(
+                            Calendar.YEAR
+                        ),
+                        novoMes.get(
+                            Calendar.MONTH
+                        ),
+                        entregas
+                    )
+                }
+
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        90,
+                        65
+                    )
+            }
+
+        navegacao.addView(
+            anterior
+        )
+
+        navegacao.addView(
+            nomeMes
+        )
+
+        navegacao.addView(
+            proximo
+        )
+
+        principal.addView(
+            navegacao
+        )
+
+        val diasSemana =
+            TextView(this).apply {
+
+                text =
+                    "SEG   TER   QUA   QUI   SEX   SÁB   DOM"
+
+                textSize = 11f
+
+                gravity =
+                    Gravity.CENTER
+
+                setTextColor(
+                    cinzaTexto
+                )
+
+                setPadding(
+                    0,
+                    10,
+                    0,
+                    10
+                )
+            }
+
+        principal.addView(
+            diasSemana
+        )
+
+        val gradeCalendario =
+            GridLayout(this).apply {
+
+                columnCount = 7
+
+                rowCount = 6
+
+                useDefaultMargins = false
+
+                layoutParams =
+                    LinearLayout.LayoutParams(
+                        -1,
+                        -2
+                    )
+            }
+
+        val primeiroDia =
+            Calendar.getInstance()
+
+        primeiroDia.set(
+            ano,
+            mes,
+            1
+        )
+
+        val diaSemana =
+            (primeiroDia.get(
+                Calendar.DAY_OF_WEEK
+            ) + 5) % 7
+
+        val ultimoDia =
+            primeiroDia.getActualMaximum(
+                Calendar.DAY_OF_MONTH
+            )
+
+        for (i in 0 until 42) {
+
+            val dia =
+                i - diaSemana + 1
+
+            if (
+                dia < 1 ||
+                dia > ultimoDia
+            ) {
+
+                gradeCalendario.addView(
+                    TextView(this).apply {
+
+                        layoutParams =
+                            GridLayout.LayoutParams().apply {
+
+                                width = 0
+                                height = 55
+                                columnSpec =
+                                    GridLayout.spec(
+                                        GridLayout.UNDEFINED,
+                                        1f
+                                    )
+                            }
+                    }
+                )
+
+            } else {
+
+                val quantidade =
+                    quantidadeNoDia(
+                        dia,
+                        mes,
+                        ano,
+                        entregas
+                    )
+
+                val botaoDia =
+                    TextView(this).apply {
+
+                        text =
+                            if (quantidade > 0)
+                                "$dia\n●"
+                            else
+                                dia.toString()
+
+                        textSize = 13f
+
+                        gravity =
+                            Gravity.CENTER
+
+                        setTextColor(
+                            Color.BLACK
+                        )
+
+                        background =
+                            GradientDrawable().apply {
+
+                                cornerRadius = 12f
+
+                                setColor(
+                                    if (quantidade > 0)
+                                        lilasClaro
+                                    else
+                                        Color.WHITE
+                                )
+
+                                setStroke(
+                                    1,
+                                    Color.rgb(
+                                        220,
+                                        220,
+                                        220
+                                    )
+                                )
+                            }
+
+                        setOnClickListener {
+
+                            mostrarDiaDoMes(
+                                dia,
+                                mes,
+                                ano,
+                                entregas
+                            )
+                        }
+
+                        layoutParams =
+                            GridLayout.LayoutParams().apply {
+
+                                width = 0
+                                height = 55
+
+                                columnSpec =
+                                    GridLayout.spec(
+                                        GridLayout.UNDEFINED,
+                                        1f
+                                    )
+
+                                setMargins(
+                                    2,
+                                    2,
+                                    2,
+                                    2
+                                )
+                            }
+                    }
+
+                gradeCalendario.addView(
+                    botaoDia
+                )
+            }
+        }
+
+        principal.addView(
+            gradeCalendario
+        )
+
+        principal.addView(
+            botao(
+                "VOLTAR",
+                true
+            ) {
+                telaInicial()
+            }
+        )
+
+        tela.addView(
+            principal,
+            FrameLayout.LayoutParams(
+                -1,
+                -2,
+                Gravity.CENTER
+            )
+        )
+
+        setContentView(tela)
+    }
+
+    // ---------------------------------------------------------
+    // ITENS DO CALENDÁRIO
+    // ---------------------------------------------------------
+
+    private fun quantidadeNoDia(
+        dia: Int,
+        mes: Int,
+        ano: Int,
+        entregas: Boolean
+    ): Int {
+
+        val lista =
+            buscarTodos()
+
+        return lista.count {
+
+            val data =
+                if (entregas)
+                    it.prazoEntrega
+                else
+                    it.data
+
+            if (data.isNullOrBlank())
+                false
+            else {
+
+                val partes =
+                    data.split("/")
+
+                if (partes.size != 3)
+                    false
+                else {
+
+                    partes[0].toIntOrNull() == dia &&
+                        partes[1].toIntOrNull() == mes + 1 &&
+                        partes[2].toIntOrNull() == ano
+                }
+            }
+        }
+    }
+
+    private fun mostrarDiaDoMes(
+        dia: Int,
+        mes: Int,
+        ano: Int,
+        entregas: Boolean
+    ) {
+
+        val dataSelecionada =
+            String.format(
+                Locale("pt", "BR"),
+                "%02d/%02d/%04d",
+                dia,
+                mes + 1,
+                ano
+            )
+
+        val lista =
+            buscarTodos()
+                .filter {
+
+                    val data =
+                        if (entregas)
+                            it.prazoEntrega
+                        else
+                            it.data
+
+                    data == dataSelecionada
+                }
+                .sortedWith(
+                    compareBy<Agendamento> {
+                        it.data
+                    }.thenBy {
+                        it.horario
+                    }
+                )
+
+        val tela =
+            fundo(Color.WHITE)
+
+        val principal =
+            LinearLayout(this).apply {
+
+                orientation =
+                    LinearLayout.VERTICAL
+
+                gravity =
+                    Gravity.CENTER_HORIZONTAL
+
+                setPadding(
+                    25,
+                    20,
+                    25,
+                    20
+                )
+            }
+
+        principal.addView(
+            tituloInterno(
+                dataSelecionada
+            )
+        )
+
+        if (lista.isEmpty()) {
+
+            principal.addView(
+                TextView(this).apply {
+
+                    text =
+                        if (entregas)
+                            "Nenhuma entrega neste dia."
+                        else
+                            "Nenhum ensaio neste dia."
+
+                    textSize = 16f
+
+                    gravity =
+                        Gravity.CENTER
+
+                    setTextColor(
+                        cinzaTexto
+                    )
+
+                    setPadding(
+                        0,
+                        25,
+                        0,
+                        25
+                    )
+                }
+            )
+
+        } else {
+
+            val grade =
+                GridLayout(this).apply {
+
+                    columnCount = 2
+
+                    rowCount =
+                        (lista.size + 1) / 2
+
+                    useDefaultMargins = false
+                }
+
+            lista.forEach {
+
+                if (entregas) {
+
+                    grade.addView(
+                        cartaoEntrega(
+                            it
+                        )
+                    )
+
+                } else {
+
+                    grade.addView(
+                        cartaoAgendamento(
+                            it
+                        )
+                    )
+                }
+            }
+
+            principal.addView(
+                grade
+            )
+        }
+
+        principal.addView(
+            botao(
+                "VOLTAR",
+                true
+            ) {
+
+                mostrarMes(
+                    ano,
+                    mes,
+                    entregas
+                )
+            }
+        )
+
+        tela.addView(
+            principal,
+            FrameLayout.LayoutParams(
+                -1,
+                -2,
+                Gravity.CENTER
+            )
+        )
+
+        setContentView(tela)
+    }
+
+    // ---------------------------------------------------------
+    // ORDENAÇÃO
+    // ---------------------------------------------------------
+
+    private fun dataOrdenacao(
+        data: String
+    ): String {
+
+        if (data.isBlank())
+            return "9999-99-99"
+
+        val partes =
+            data.split("/")
+
+        if (partes.size != 3)
+            return "9999-99-99"
+
+        return "${partes[2]}-${partes[1]}-${partes[0]}"
+    }
+
+    // ---------------------------------------------------------
+    // NOME DO MÊS
+    // ---------------------------------------------------------
+
+    private fun nomeDoMes(
+        mes: Int,
+        ano: Int
+    ): String {
+
+        val nomes =
+            arrayOf(
+                "JANEIRO",
+                "FEVEREIRO",
+                "MARÇO",
+                "ABRIL",
+                "MAIO",
+                "JUNHO",
+                "JULHO",
+                "AGOSTO",
+                "SETEMBRO",
+                "OUTUBRO",
+                "NOVEMBRO",
+                "DEZEMBRO"
+            )
+
+        return "${nomes[mes]} $ano"
+    }
+
+    // ---------------------------------------------------------
+    // FORMATAÇÃO
+    // ---------------------------------------------------------
 
     private fun formatar(
         valor: Double
