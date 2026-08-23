@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.Gravity
+import android.view.ViewGroup
 import android.widget.*
 import java.util.Calendar
 import java.util.Locale
@@ -73,10 +74,11 @@ class MainActivity : Activity() {
         telaInicial()
     }
 
-    private fun base(): LinearLayout {
+    private fun telaBase(): LinearLayout {
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(30, 30, 30, 30)
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(35, 35, 35, 35)
         }
     }
 
@@ -85,7 +87,11 @@ class MainActivity : Activity() {
             text = texto
             textSize = 26f
             gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 30)
+            setPadding(0, 10, 0, 30)
+            layoutParams = LinearLayout.LayoutParams(
+                -1,
+                -2
+            )
         }
     }
 
@@ -93,13 +99,13 @@ class MainActivity : Activity() {
         return EditText(this).apply {
             hint = dica
             textSize = 16f
-            setSingleLine(false)
+            setPadding(15, 10, 15, 10)
 
             layoutParams = LinearLayout.LayoutParams(
                 -1,
                 -2
             ).apply {
-                setMargins(0, 0, 0, 12)
+                setMargins(0, 0, 0, 14)
             }
         }
     }
@@ -109,6 +115,7 @@ class MainActivity : Activity() {
         acao: () -> Unit
     ): Button {
         return Button(this).apply {
+
             text = texto
 
             setOnClickListener {
@@ -124,15 +131,50 @@ class MainActivity : Activity() {
         }
     }
 
+    private fun telaCentralizada(
+        conteudo: LinearLayout,
+        rolagem: Boolean = false
+    ) {
+
+        if (rolagem) {
+
+            val scroll =
+                ScrollView(this)
+
+            scroll.addView(
+                conteudo,
+                ViewGroup.LayoutParams(
+                    -1,
+                    -2
+                )
+            )
+
+            setContentView(scroll)
+
+        } else {
+
+            val frame =
+                FrameLayout(this)
+
+            frame.addView(
+                conteudo,
+                FrameLayout.LayoutParams(
+                    -1,
+                    -2,
+                    Gravity.CENTER
+                )
+            )
+
+            setContentView(frame)
+        }
+    }
+
     private fun telaInicial() {
 
-        val tela = FrameLayout(this)
+        val layout = telaBase()
 
-        val layout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            setPadding(40, 40, 40, 40)
-        }
+        layout.gravity =
+            Gravity.CENTER
 
         layout.addView(
             titulo("ESTÚDIO")
@@ -156,23 +198,14 @@ class MainActivity : Activity() {
             }
         )
 
-        tela.addView(
-            layout,
-            FrameLayout.LayoutParams(
-                -1,
-                -2,
-                Gravity.CENTER
-            )
-        )
-
-        setContentView(tela)
+        telaCentralizada(layout)
     }
 
     private fun novoAgendamento(
         editar: Agendamento? = null
     ) {
 
-        val layout = base()
+        val layout = telaBase()
 
         layout.addView(
             titulo(
@@ -183,22 +216,16 @@ class MainActivity : Activity() {
             )
         )
 
-        // NOME
-        val nome = campo(
-            "Nome do Cliente"
-        )
+        val nome =
+            campo("Nome do Cliente")
 
-        // CONTATO
-        val contato = campo(
-            "Contato"
-        )
+        val contato =
+            campo("Contato")
 
         aplicarMascaraTelefone(contato)
 
-        // DATA
-        val data = campo(
-            "Data do ensaio"
-        )
+        val data =
+            campo("Data do ensaio")
 
         data.isFocusable = false
         data.isClickable = true
@@ -207,10 +234,8 @@ class MainActivity : Activity() {
             escolherData(data)
         }
 
-        // HORÁRIO
-        val horario = campo(
-            "Horário do ensaio"
-        )
+        val horario =
+            campo("Horário do ensaio")
 
         horario.isFocusable = false
         horario.isClickable = true
@@ -219,30 +244,26 @@ class MainActivity : Activity() {
             escolherHorario(horario)
         }
 
-        // TIPO
-        val tipo = campo(
-            "Tipo de ensaio"
-        )
+        val tipo =
+            campo("Tipo de ensaio")
 
-        // OBSERVAÇÕES
-        val observacoes = campo(
-            "Observações"
-        )
+        val observacoes =
+            campo("Observações")
 
         observacoes.minLines = 4
 
-        // VALOR
-        val valor = campo(
-            "Valor total do ensaio — somente o número"
-        )
+        val valor =
+            campo(
+                "Valor total do ensaio — somente o número"
+            )
 
         valor.inputType =
             android.text.InputType.TYPE_CLASS_NUMBER
 
-        // SINAL
-        val sinal = campo(
-            "Valor do SINAL — somente o número"
-        )
+        val sinal =
+            campo(
+                "Valor do SINAL — somente o número"
+            )
 
         sinal.inputType =
             android.text.InputType.TYPE_CLASS_NUMBER
@@ -250,15 +271,10 @@ class MainActivity : Activity() {
         if (editar != null) {
 
             nome.setText(editar.nome)
-
             contato.setText(editar.contato)
-
             data.setText(editar.data)
-
             horario.setText(editar.horario)
-
             tipo.setText(editar.tipo)
-
             observacoes.setText(
                 editar.observacoes
             )
@@ -317,84 +333,9 @@ class MainActivity : Activity() {
             }
         )
 
-        setContentView(
-            ScrollView(this).apply {
-                addView(layout)
-            }
-        )
-    }
-
-    private fun aplicarMascaraTelefone(
-        campo: EditText
-    ) {
-
-        var alterando = false
-
-        campo.addTextChangedListener(
-            object : TextWatcher {
-
-                override fun beforeTextChanged(
-                    s: CharSequence?,
-                    start: Int,
-                    count: Int,
-                    after: Int
-                ) {}
-
-                override fun onTextChanged(
-                    s: CharSequence?,
-                    start: Int,
-                    before: Int,
-                    count: Int
-                ) {}
-
-                override fun afterTextChanged(
-                    s: Editable?
-                ) {
-
-                    if (alterando) return
-
-                    val numeros =
-                        s.toString()
-                            .filter {
-                                it.isDigit()
-                            }
-                            .take(11)
-
-                    if (numeros.isEmpty()) {
-                        return
-                    }
-
-                    val formatado =
-                        when {
-
-                            numeros.length <= 2 ->
-                                "(${numeros}"
-
-                            numeros.length <= 7 ->
-                                "(${numeros.substring(0, 2)}) " +
-                                    numeros.substring(2)
-
-                            else ->
-                                "(${numeros.substring(0, 2)}) " +
-                                    numeros.substring(2, 7) +
-                                    "-" +
-                                    numeros.substring(7)
-                        }
-
-                    if (formatado != s.toString()) {
-
-                        alterando = true
-
-                        campo.setText(formatado)
-
-                        campo.setSelection(
-                            formatado.length
-                        )
-
-                        alterando = false
-                    }
-                }
-            }
+        telaCentralizada(
+            layout,
+            rolagem = true
         )
     }
 
@@ -409,13 +350,6 @@ class MainActivity : Activity() {
         valorTexto: String,
         sinalTexto: String
     ) {
-
-        /*
-         * NENHUM CAMPO É OBRIGATÓRIO.
-         *
-         * Se a pessoa deixar qualquer campo vazio,
-         * o cadastro será salvo mesmo assim.
-         */
 
         val valor =
             if (valorTexto.isBlank())
@@ -478,6 +412,83 @@ class MainActivity : Activity() {
         listarAgendamentos()
     }
 
+    private fun aplicarMascaraTelefone(
+        campo: EditText
+    ) {
+
+        var alterando = false
+
+        campo.addTextChangedListener(
+            object : TextWatcher {
+
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {}
+
+                override fun onTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    before: Int,
+                    count: Int
+                ) {}
+
+                override fun afterTextChanged(
+                    s: Editable?
+                ) {
+
+                    if (alterando) return
+
+                    val numeros =
+                        s.toString()
+                            .filter {
+                                it.isDigit()
+                            }
+                            .take(11)
+
+                    if (numeros.isEmpty()) return
+
+                    val formatado =
+                        when {
+
+                            numeros.length <= 2 ->
+                                "(${numeros}"
+
+                            numeros.length <= 7 ->
+                                "(${numeros.substring(0, 2)}) " +
+                                    numeros.substring(2)
+
+                            else ->
+                                "(${numeros.substring(0, 2)}) " +
+                                    numeros.substring(2, 7) +
+                                    "-" +
+                                    numeros.substring(7)
+                        }
+
+                    if (
+                        formatado !=
+                        s.toString()
+                    ) {
+
+                        alterando = true
+
+                        campo.setText(
+                            formatado
+                        )
+
+                        campo.setSelection(
+                            formatado.length
+                        )
+
+                        alterando = false
+                    }
+                }
+            }
+        )
+    }
+
     private fun escolherData(
         campo: EditText
     ) {
@@ -535,7 +546,8 @@ class MainActivity : Activity() {
 
     private fun listarAgendamentos() {
 
-        val layout = base()
+        val layout =
+            telaBase()
 
         layout.addView(
             titulo("AGENDAMENTOS")
@@ -594,30 +606,21 @@ class MainActivity : Activity() {
 
                 val agendamento =
                     Agendamento(
-                        id =
-                            cursor.getLong(0),
-                        nome =
-                            cursor.getString(1)
-                                ?: "",
-                        contato =
-                            cursor.getString(2)
-                                ?: "",
-                        data =
-                            cursor.getString(3)
-                                ?: "",
-                        horario =
-                            cursor.getString(4)
-                                ?: "",
-                        tipo =
-                            cursor.getString(5)
-                                ?: "",
-                        observacoes =
-                            cursor.getString(6)
-                                ?: "",
-                        valor =
-                            cursor.getDouble(7),
-                        sinal =
-                            cursor.getDouble(8)
+                        cursor.getLong(0),
+                        cursor.getString(1)
+                            ?: "",
+                        cursor.getString(2)
+                            ?: "",
+                        cursor.getString(3)
+                            ?: "",
+                        cursor.getString(4)
+                            ?: "",
+                        cursor.getString(5)
+                            ?: "",
+                        cursor.getString(6)
+                            ?: "",
+                        cursor.getDouble(7),
+                        cursor.getDouble(8)
                     )
 
                 layout.addView(
@@ -637,10 +640,9 @@ class MainActivity : Activity() {
             }
         )
 
-        setContentView(
-            ScrollView(this).apply {
-                addView(layout)
-            }
+        telaCentralizada(
+            layout,
+            rolagem = true
         )
     }
 
@@ -653,6 +655,9 @@ class MainActivity : Activity() {
 
         card.orientation =
             LinearLayout.VERTICAL
+
+        card.gravity =
+            Gravity.CENTER_HORIZONTAL
 
         card.setPadding(
             0,
@@ -670,7 +675,9 @@ class MainActivity : Activity() {
 
         texto.text =
             """
-            ${agendamento.nome.ifBlank { "Cliente sem nome" }}
+            ${agendamento.nome.ifBlank {
+                "Cliente sem nome"
+            }}
 
             Contato: ${
                 agendamento.contato.ifBlank {
@@ -696,9 +703,17 @@ class MainActivity : Activity() {
                 }
             }
 
-            Valor: R$ ${formatar(agendamento.valor)}
-            Sinal: R$ ${formatar(agendamento.sinal)}
-            Restante: R$ ${formatar(restante)}
+            Valor: R$ ${formatar(
+                agendamento.valor
+            )}
+
+            Sinal: R$ ${formatar(
+                agendamento.sinal
+            )}
+
+            Restante: R$ ${formatar(
+                restante
+            )}
 
             Observações:
             ${
@@ -710,31 +725,26 @@ class MainActivity : Activity() {
 
         texto.textSize = 16f
 
+        texto.gravity =
+            Gravity.CENTER
+
         card.addView(texto)
 
         card.addView(
             botao("EDITAR / REAGENDAR") {
-                novoAgendamento(agendamento)
+                novoAgendamento(
+                    agendamento
+                )
             }
         )
 
         return card
     }
 
-    private fun formatar(
-        valor: Double
-    ): String {
-
-        return String.format(
-            Locale("pt", "BR"),
-            "%.2f",
-            valor
-        )
-    }
-
     private fun telaEntregas() {
 
-        val layout = base()
+        val layout =
+            telaBase()
 
         layout.addView(
             titulo("ENTREGAS")
@@ -744,7 +754,7 @@ class MainActivity : Activity() {
             TextView(this)
 
         aviso.text =
-            "A parte de entregas será adicionada depois que o cadastro de agendamentos estiver funcionando corretamente."
+            "A parte de entregas será adicionada nesta etapa."
 
         aviso.textSize = 17f
 
@@ -766,6 +776,17 @@ class MainActivity : Activity() {
             }
         )
 
-        setContentView(layout)
+        telaCentralizada(layout)
+    }
+
+    private fun formatar(
+        valor: Double
+    ): String {
+
+        return String.format(
+            Locale("pt", "BR"),
+            "%.2f",
+            valor
+        )
     }
 }
