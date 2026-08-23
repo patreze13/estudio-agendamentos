@@ -10,6 +10,8 @@ import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.Gravity
 import android.widget.*
 import java.text.SimpleDateFormat
@@ -106,10 +108,6 @@ class MainActivity : Activity() {
         }
     }
 
-    // ---------------------------------------------------------
-    // ELEMENTOS VISUAIS
-    // ---------------------------------------------------------
-
     private fun fundo(cor: Int): FrameLayout {
         return FrameLayout(this).apply {
             setBackgroundColor(cor)
@@ -151,17 +149,21 @@ class MainActivity : Activity() {
 
             text = texto
             textSize = 15f
+
+            // Texto dos botões sempre preto
             setTextColor(Color.BLACK)
+
             gravity = Gravity.CENTER
             typeface = Typeface.DEFAULT_BOLD
 
             background = GradientDrawable().apply {
                 cornerRadius = 22f
                 setColor(
-                    if (interno)
+                    if (interno) {
                         lilasClaro
-                    else
+                    } else {
                         Color.WHITE
+                    }
                 )
             }
 
@@ -193,6 +195,7 @@ class MainActivity : Activity() {
             textSize = 14f
 
             setTextColor(Color.BLACK)
+
             setHintTextColor(
                 Color.rgb(150, 150, 150)
             )
@@ -241,10 +244,6 @@ class MainActivity : Activity() {
                 }
         }
     }
-
-    // ---------------------------------------------------------
-    // TELA INICIAL
-    // ---------------------------------------------------------
 
     private fun telaInicial() {
 
@@ -317,10 +316,6 @@ class MainActivity : Activity() {
         window.statusBarColor = lilasFundo
         window.navigationBarColor = lilasFundo
     }
-
-    // ---------------------------------------------------------
-    // NOVO AGENDAMENTO
-    // ---------------------------------------------------------
 
     private fun novoAgendamento(
         editar: Agendamento? = null
@@ -503,10 +498,6 @@ class MainActivity : Activity() {
         window.navigationBarColor = Color.WHITE
     }
 
-    // ---------------------------------------------------------
-    // SALVAR
-    // ---------------------------------------------------------
-
     private fun salvarAgendamento(
         editar: Agendamento?,
         nome: String,
@@ -573,10 +564,6 @@ class MainActivity : Activity() {
 
         listarAgendamentos()
     }
-
-    // ---------------------------------------------------------
-    // MASCARA TELEFONE
-    // ---------------------------------------------------------
 
     private fun aplicarMascaraTelefone(
         campo: EditText
@@ -659,10 +646,6 @@ class MainActivity : Activity() {
         )
     }
 
-    // ---------------------------------------------------------
-    // DATA / HORA
-    // ---------------------------------------------------------
-
     private fun escolherData(
         campo: EditText
     ) {
@@ -718,10 +701,6 @@ class MainActivity : Activity() {
         ).show()
     }
 
-    // ---------------------------------------------------------
-    // MARCAR ENSAIO REALIZADO
-    // ---------------------------------------------------------
-
     private fun marcarEnsaioRealizado(
         id: Long
     ) {
@@ -738,8 +717,7 @@ class MainActivity : Activity() {
 
         if (cursor.moveToFirst()) {
             dataEnsaio =
-                cursor.getString(0)
-                    ?: ""
+                cursor.getString(0) ?: ""
         }
 
         cursor.close()
@@ -819,10 +797,6 @@ class MainActivity : Activity() {
         }
     }
 
-    // ---------------------------------------------------------
-    // BUSCAR TODOS OS AGENDAMENTOS
-    // ---------------------------------------------------------
-
     private fun buscarTodos(): MutableList<Agendamento> {
 
         val lista =
@@ -880,10 +854,6 @@ class MainActivity : Activity() {
         return lista
     }
 
-    // ---------------------------------------------------------
-    // AGENDAMENTOS
-    // ---------------------------------------------------------
-
     private fun listarAgendamentos() {
 
         telaAtual = "agendamentos"
@@ -930,9 +900,7 @@ class MainActivity : Activity() {
                 }
                 .sortedWith(
                     compareBy<Agendamento> {
-                        dataOrdenacao(
-                            it.data
-                        )
+                        dataOrdenacao(it.data)
                     }.thenBy {
                         it.horario
                     }
@@ -940,7 +908,7 @@ class MainActivity : Activity() {
 
         if (lista.isEmpty()) {
 
-            val aviso =
+            principal.addView(
                 TextView(this).apply {
 
                     text =
@@ -962,8 +930,7 @@ class MainActivity : Activity() {
                         25
                     )
                 }
-
-            principal.addView(aviso)
+            )
 
         } else {
 
@@ -974,9 +941,6 @@ class MainActivity : Activity() {
 
                     rowCount =
                         (lista.size + 1) / 2
-
-                    alignmentMode =
-                        GridLayout.ALIGN_BOUNDS
 
                     useDefaultMargins = false
 
@@ -1021,10 +985,6 @@ class MainActivity : Activity() {
 
         setContentView(tela)
     }
-
-    // ---------------------------------------------------------
-    // CARTAO DE AGENDAMENTO
-    // ---------------------------------------------------------
 
     private fun cartaoAgendamento(
         agendamento: Agendamento
@@ -1079,7 +1039,7 @@ class MainActivity : Activity() {
         val tamanho =
             (largura - 80) / 2
 
-        val parametros =
+        card.layoutParams =
             GridLayout.LayoutParams().apply {
 
                 width =
@@ -1096,10 +1056,7 @@ class MainActivity : Activity() {
                 )
             }
 
-        card.layoutParams =
-            parametros
-
-        val nome =
+        card.addView(
             TextView(this).apply {
 
                 text =
@@ -1119,14 +1076,13 @@ class MainActivity : Activity() {
                 gravity =
                     Gravity.CENTER
             }
+        )
 
-        val data =
+        card.addView(
             TextView(this).apply {
 
                 text =
-                    if (
-                        agendamento.data.isBlank()
-                    )
+                    if (agendamento.data.isBlank())
                         "Data não informada"
                     else
                         agendamento.data
@@ -1140,14 +1096,13 @@ class MainActivity : Activity() {
                 gravity =
                     Gravity.CENTER
             }
+        )
 
-        val horario =
+        card.addView(
             TextView(this).apply {
 
                 text =
-                    if (
-                        agendamento.horario.isBlank()
-                    )
+                    if (agendamento.horario.isBlank())
                         "Horário não informado"
                     else
                         agendamento.horario
@@ -1161,24 +1116,14 @@ class MainActivity : Activity() {
                 gravity =
                     Gravity.CENTER
             }
-
-        card.addView(nome)
-        card.addView(data)
-        card.addView(horario)
+        )
 
         card.setOnClickListener {
-
-            detalhesAgendamento(
-                agendamento
-            )
+            detalhesAgendamento(agendamento)
         }
 
         return card
     }
-
-    // ---------------------------------------------------------
-    // DETALHES DO AGENDAMENTO
-    // ---------------------------------------------------------
 
     private fun detalhesAgendamento(
         agendamento: Agendamento
@@ -1205,7 +1150,7 @@ class MainActivity : Activity() {
                     30,
                     20
                 )
-        }
+            }
 
         conteudo.addView(
             tituloInterno(
@@ -1219,7 +1164,7 @@ class MainActivity : Activity() {
             agendamento.valor -
                 agendamento.sinal
 
-        val detalhes =
+        conteudo.addView(
             TextView(this).apply {
 
                 text =
@@ -1275,9 +1220,6 @@ class MainActivity : Activity() {
                     20
                 )
             }
-
-        conteudo.addView(
-            detalhes
         )
 
         conteudo.addView(
@@ -1285,9 +1227,7 @@ class MainActivity : Activity() {
                 "EDITAR / REAGENDAR",
                 true
             ) {
-                novoAgendamento(
-                    agendamento
-                )
+                novoAgendamento(agendamento)
             }
         )
 
@@ -1322,10 +1262,6 @@ class MainActivity : Activity() {
 
         setContentView(tela)
     }
-
-    // ---------------------------------------------------------
-    // ENTREGAS
-    // ---------------------------------------------------------
 
     private fun telaEntregas() {
 
@@ -1366,14 +1302,13 @@ class MainActivity : Activity() {
                 }
                 .sortedBy {
                     dataOrdenacao(
-                        it.prazoEntrega
-                            ?: ""
+                        it.prazoEntrega ?: ""
                     )
                 }
 
         if (lista.isEmpty()) {
 
-            val aviso =
+            principal.addView(
                 TextView(this).apply {
 
                     text =
@@ -1395,8 +1330,7 @@ class MainActivity : Activity() {
                         25
                     )
                 }
-
-            principal.addView(aviso)
+            )
 
         } else {
 
@@ -1417,12 +1351,10 @@ class MainActivity : Activity() {
                         )
                 }
 
-            lista.forEach { agendamento ->
+            lista.forEach {
 
                 grade.addView(
-                    cartaoEntrega(
-                        agendamento
-                    )
+                    cartaoEntrega(it)
                 )
             }
 
@@ -1451,10 +1383,6 @@ class MainActivity : Activity() {
 
         setContentView(tela)
     }
-
-    // ---------------------------------------------------------
-    // CARTAO DE ENTREGA
-    // ---------------------------------------------------------
 
     private fun cartaoEntrega(
         agendamento: Agendamento
@@ -1526,7 +1454,7 @@ class MainActivity : Activity() {
                 )
             }
 
-        val nome =
+        card.addView(
             TextView(this).apply {
 
                 text =
@@ -1546,12 +1474,13 @@ class MainActivity : Activity() {
                 gravity =
                     Gravity.CENTER
             }
+        )
 
         val prazo =
             agendamento.prazoEntrega
                 ?: "Não definido"
 
-        val prazoTexto =
+        card.addView(
             TextView(this).apply {
 
                 text =
@@ -1566,14 +1495,13 @@ class MainActivity : Activity() {
                 gravity =
                     Gravity.CENTER
             }
+        )
 
-        val contagem =
+        card.addView(
             TextView(this).apply {
 
                 text =
-                    calcularContagem(
-                        prazo
-                    )
+                    calcularContagem(prazo)
 
                 textSize = 14f
 
@@ -1591,24 +1519,14 @@ class MainActivity : Activity() {
                 gravity =
                     Gravity.CENTER
             }
-
-        card.addView(nome)
-        card.addView(prazoTexto)
-        card.addView(contagem)
+        )
 
         card.setOnClickListener {
-
-            detalhesEntrega(
-                agendamento
-            )
+            detalhesEntrega(agendamento)
         }
 
         return card
     }
-
-    // ---------------------------------------------------------
-    // DETALHES DA ENTREGA
-    // ---------------------------------------------------------
 
     private fun detalhesEntrega(
         agendamento: Agendamento
@@ -1649,7 +1567,7 @@ class MainActivity : Activity() {
             agendamento.prazoEntrega
                 ?: "Não definido"
 
-        val detalhes =
+        conteudo.addView(
             TextView(this).apply {
 
                 text =
@@ -1686,9 +1604,6 @@ class MainActivity : Activity() {
                     20
                 )
             }
-
-        conteudo.addView(
-            detalhes
         )
 
         conteudo.addView(
@@ -1733,10 +1648,6 @@ class MainActivity : Activity() {
 
         setContentView(tela)
     }
-
-    // ---------------------------------------------------------
-    // CONTAGEM REGRESSIVA
-    // ---------------------------------------------------------
 
     private fun calcularContagem(
         prazo: String
@@ -1839,10 +1750,6 @@ class MainActivity : Activity() {
         }
     }
 
-    // ---------------------------------------------------------
-    // ALTERAR PRAZO
-    // ---------------------------------------------------------
-
     private fun alterarPrazo(
         id: Long
     ) {
@@ -1883,21 +1790,11 @@ class MainActivity : Activity() {
                 telaEntregas()
 
             },
-            calendario.get(
-                Calendar.YEAR
-            ),
-            calendario.get(
-                Calendar.MONTH
-            ),
-            calendario.get(
-                Calendar.DAY_OF_MONTH
-            )
+            calendario.get(Calendar.YEAR),
+            calendario.get(Calendar.MONTH),
+            calendario.get(Calendar.DAY_OF_MONTH)
         ).show()
     }
-
-    // ---------------------------------------------------------
-    // MARCAR ENTREGA
-    // ---------------------------------------------------------
 
     private fun marcarEntregaRealizada(
         id: Long
@@ -1928,10 +1825,6 @@ class MainActivity : Activity() {
 
         telaEntregas()
     }
-
-    // ---------------------------------------------------------
-    // CALENDÁRIO MENSAL
-    // ---------------------------------------------------------
 
     private fun calendarioMensal(
         entregas: Boolean
@@ -2008,7 +1901,6 @@ class MainActivity : Activity() {
             TextView(this).apply {
 
                 text = "‹"
-
                 textSize = 35f
 
                 gravity =
@@ -2035,12 +1927,8 @@ class MainActivity : Activity() {
                     )
 
                     mostrarMes(
-                        novoMes.get(
-                            Calendar.YEAR
-                        ),
-                        novoMes.get(
-                            Calendar.MONTH
-                        ),
+                        novoMes.get(Calendar.YEAR),
+                        novoMes.get(Calendar.MONTH),
                         entregas
                     )
                 }
@@ -2089,7 +1977,6 @@ class MainActivity : Activity() {
             TextView(this).apply {
 
                 text = "›"
-
                 textSize = 35f
 
                 gravity =
@@ -2116,12 +2003,8 @@ class MainActivity : Activity() {
                     )
 
                     mostrarMes(
-                        novoMes.get(
-                            Calendar.YEAR
-                        ),
-                        novoMes.get(
-                            Calendar.MONTH
-                        ),
+                        novoMes.get(Calendar.YEAR),
+                        novoMes.get(Calendar.MONTH),
                         entregas
                     )
                 }
@@ -2133,23 +2016,13 @@ class MainActivity : Activity() {
                     )
             }
 
-        navegacao.addView(
-            anterior
-        )
+        navegacao.addView(anterior)
+        navegacao.addView(nomeMes)
+        navegacao.addView(proximo)
 
-        navegacao.addView(
-            nomeMes
-        )
-
-        navegacao.addView(
-            proximo
-        )
+        principal.addView(navegacao)
 
         principal.addView(
-            navegacao
-        )
-
-        val diasSemana =
             TextView(this).apply {
 
                 text =
@@ -2171,18 +2044,13 @@ class MainActivity : Activity() {
                     10
                 )
             }
-
-        principal.addView(
-            diasSemana
         )
 
         val gradeCalendario =
             GridLayout(this).apply {
 
                 columnCount = 7
-
                 rowCount = 6
-
                 useDefaultMargins = false
 
                 layoutParams =
@@ -2202,9 +2070,11 @@ class MainActivity : Activity() {
         )
 
         val diaSemana =
-            (primeiroDia.get(
-                Calendar.DAY_OF_WEEK
-            ) + 5) % 7
+            (
+                primeiroDia.get(
+                    Calendar.DAY_OF_WEEK
+                ) + 5
+                ) % 7
 
         val ultimoDia =
             primeiroDia.getActualMaximum(
@@ -2229,6 +2099,7 @@ class MainActivity : Activity() {
 
                                 width = 0
                                 height = 55
+
                                 columnSpec =
                                     GridLayout.spec(
                                         GridLayout.UNDEFINED,
@@ -2350,10 +2221,6 @@ class MainActivity : Activity() {
         setContentView(tela)
     }
 
-    // ---------------------------------------------------------
-    // ITENS DO CALENDÁRIO
-    // ---------------------------------------------------------
-
     private fun quantidadeNoDia(
         dia: Int,
         mes: Int,
@@ -2361,10 +2228,7 @@ class MainActivity : Activity() {
         entregas: Boolean
     ): Int {
 
-        val lista =
-            buscarTodos()
-
-        return lista.count {
+        return buscarTodos().count {
 
             val data =
                 if (entregas)
@@ -2372,16 +2236,20 @@ class MainActivity : Activity() {
                 else
                     it.data
 
-            if (data.isNullOrBlank())
+            if (data.isNullOrBlank()) {
+
                 false
-            else {
+
+            } else {
 
                 val partes =
                     data.split("/")
 
-                if (partes.size != 3)
+                if (partes.size != 3) {
+
                     false
-                else {
+
+                } else {
 
                     partes[0].toIntOrNull() == dia &&
                         partes[1].toIntOrNull() == mes + 1 &&
@@ -2500,17 +2368,13 @@ class MainActivity : Activity() {
                 if (entregas) {
 
                     grade.addView(
-                        cartaoEntrega(
-                            it
-                        )
+                        cartaoEntrega(it)
                     )
 
                 } else {
 
                     grade.addView(
-                        cartaoAgendamento(
-                            it
-                        )
+                        cartaoAgendamento(it)
                     )
                 }
             }
@@ -2546,10 +2410,6 @@ class MainActivity : Activity() {
         setContentView(tela)
     }
 
-    // ---------------------------------------------------------
-    // ORDENAÇÃO
-    // ---------------------------------------------------------
-
     private fun dataOrdenacao(
         data: String
     ): String {
@@ -2565,10 +2425,6 @@ class MainActivity : Activity() {
 
         return "${partes[2]}-${partes[1]}-${partes[0]}"
     }
-
-    // ---------------------------------------------------------
-    // NOME DO MÊS
-    // ---------------------------------------------------------
 
     private fun nomeDoMes(
         mes: Int,
@@ -2593,10 +2449,6 @@ class MainActivity : Activity() {
 
         return "${nomes[mes]} $ano"
     }
-
-    // ---------------------------------------------------------
-    // FORMATAÇÃO
-    // ---------------------------------------------------------
 
     private fun formatar(
         valor: Double
