@@ -7,6 +7,8 @@ import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.Gravity
 import android.widget.*
 import java.util.Calendar
@@ -24,9 +26,7 @@ data class Agendamento(
     val sinal: Double
 )
 
-class Banco(
-    activity: Activity
-) : SQLiteOpenHelper(
+class Banco(activity: Activity) : SQLiteOpenHelper(
     activity,
     "estudio.db",
     null,
@@ -34,19 +34,18 @@ class Banco(
 ) {
 
     override fun onCreate(db: SQLiteDatabase) {
-
         db.execSQL(
             """
             CREATE TABLE agendamentos (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT NOT NULL,
-                contato TEXT NOT NULL,
-                data TEXT NOT NULL,
-                horario TEXT NOT NULL,
-                tipo TEXT NOT NULL,
+                nome TEXT,
+                contato TEXT,
+                data TEXT,
+                horario TEXT,
+                tipo TEXT,
                 observacoes TEXT,
-                valor REAL NOT NULL,
-                sinal REAL NOT NULL
+                valor REAL,
+                sinal REAL
             )
             """.trimIndent()
         )
@@ -66,9 +65,7 @@ class MainActivity : Activity() {
 
     private lateinit var banco: Banco
 
-    override fun onCreate(
-        savedInstanceState: Bundle?
-    ) {
+    override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         banco = Banco(this)
@@ -77,72 +74,33 @@ class MainActivity : Activity() {
     }
 
     private fun base(): LinearLayout {
-
         return LinearLayout(this).apply {
-
-            orientation =
-                LinearLayout.VERTICAL
-
-            setPadding(
-                30,
-                30,
-                30,
-                30
-            )
+            orientation = LinearLayout.VERTICAL
+            setPadding(30, 30, 30, 30)
         }
     }
 
-    private fun titulo(
-        texto: String
-    ): TextView {
-
+    private fun titulo(texto: String): TextView {
         return TextView(this).apply {
-
             text = texto
-
             textSize = 26f
-
-            gravity =
-                Gravity.CENTER
-
-            setPadding(
-                0,
-                0,
-                0,
-                30
-            )
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 30)
         }
     }
 
-    private fun campo(
-        dica: String
-    ): EditText {
-
+    private fun campo(dica: String): EditText {
         return EditText(this).apply {
-
             hint = dica
-
             textSize = 16f
+            setSingleLine(false)
 
-            setPadding(
-                15,
-                15,
-                15,
-                15
-            )
-
-            layoutParams =
-                LinearLayout.LayoutParams(
-                    -1,
-                    -2
-                ).apply {
-                    setMargins(
-                        0,
-                        0,
-                        0,
-                        12
-                    )
-                }
+            layoutParams = LinearLayout.LayoutParams(
+                -1,
+                -2
+            ).apply {
+                setMargins(0, 0, 0, 12)
+            }
         }
     }
 
@@ -150,51 +108,31 @@ class MainActivity : Activity() {
         texto: String,
         acao: () -> Unit
     ): Button {
-
         return Button(this).apply {
-
             text = texto
 
             setOnClickListener {
                 acao()
             }
 
-            layoutParams =
-                LinearLayout.LayoutParams(
-                    -1,
-                    -2
-                ).apply {
-                    setMargins(
-                        0,
-                        8,
-                        0,
-                        8
-                    )
-                }
+            layoutParams = LinearLayout.LayoutParams(
+                -1,
+                -2
+            ).apply {
+                setMargins(0, 8, 0, 8)
+            }
         }
     }
 
     private fun telaInicial() {
 
-        val tela =
-            FrameLayout(this)
+        val tela = FrameLayout(this)
 
-        val layout =
-            LinearLayout(this).apply {
-
-                orientation =
-                    LinearLayout.VERTICAL
-
-                gravity =
-                    Gravity.CENTER
-
-                setPadding(
-                    40,
-                    40,
-                    40,
-                    40
-                )
-            }
+        val layout = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(40, 40, 40, 40)
+        }
 
         layout.addView(
             titulo("ESTÚDIO")
@@ -245,65 +183,101 @@ class MainActivity : Activity() {
             )
         )
 
-        val nome =
-            campo("Nome do cliente")
+        // NOME
+        val nome = campo(
+            "Nome do Cliente"
+        )
 
-        val contato =
-            campo("Contato / WhatsApp")
+        // CONTATO
+        val contato = campo(
+            "Contato"
+        )
 
-        val data =
-            campo("Data do ensaio — DD/MM/AAAA")
+        aplicarMascaraTelefone(contato)
 
-        val horario =
-            campo("Horário do ensaio — HH:MM")
-
-        val tipo =
-            campo("Tipo de ensaio")
-
-        val observacoes =
-            campo("Observações")
-
-        observacoes.minLines = 4
-
-        val valor =
-            campo("Valor total — exemplo: 300,00")
-
-        val sinal =
-            campo("Valor do sinal — deixe 0 se não houver")
+        // DATA
+        val data = campo(
+            "Data do ensaio"
+        )
 
         data.isFocusable = false
-        horario.isFocusable = false
+        data.isClickable = true
 
         data.setOnClickListener {
             escolherData(data)
         }
 
+        // HORÁRIO
+        val horario = campo(
+            "Horário do ensaio"
+        )
+
+        horario.isFocusable = false
+        horario.isClickable = true
+
         horario.setOnClickListener {
             escolherHorario(horario)
         }
 
+        // TIPO
+        val tipo = campo(
+            "Tipo de ensaio"
+        )
+
+        // OBSERVAÇÕES
+        val observacoes = campo(
+            "Observações"
+        )
+
+        observacoes.minLines = 4
+
+        // VALOR
+        val valor = campo(
+            "Valor total do ensaio — somente o número"
+        )
+
+        valor.inputType =
+            android.text.InputType.TYPE_CLASS_NUMBER
+
+        // SINAL
+        val sinal = campo(
+            "Valor do SINAL — somente o número"
+        )
+
+        sinal.inputType =
+            android.text.InputType.TYPE_CLASS_NUMBER
+
         if (editar != null) {
 
             nome.setText(editar.nome)
+
             contato.setText(editar.contato)
+
             data.setText(editar.data)
+
             horario.setText(editar.horario)
+
             tipo.setText(editar.tipo)
+
             observacoes.setText(
                 editar.observacoes
             )
 
-            valor.setText(
-                editar.valor.toString()
-            )
+            if (editar.valor > 0) {
+                valor.setText(
+                    editar.valor
+                        .toInt()
+                        .toString()
+                )
+            }
 
-            sinal.setText(
-                editar.sinal.toString()
-            )
-
-        } else {
-
-            sinal.setText("0")
+            if (editar.sinal > 0) {
+                sinal.setText(
+                    editar.sinal
+                        .toInt()
+                        .toString()
+                )
+            }
         }
 
         layout.addView(nome)
@@ -350,6 +324,80 @@ class MainActivity : Activity() {
         )
     }
 
+    private fun aplicarMascaraTelefone(
+        campo: EditText
+    ) {
+
+        var alterando = false
+
+        campo.addTextChangedListener(
+            object : TextWatcher {
+
+                override fun beforeTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    count: Int,
+                    after: Int
+                ) {}
+
+                override fun onTextChanged(
+                    s: CharSequence?,
+                    start: Int,
+                    before: Int,
+                    count: Int
+                ) {}
+
+                override fun afterTextChanged(
+                    s: Editable?
+                ) {
+
+                    if (alterando) return
+
+                    val numeros =
+                        s.toString()
+                            .filter {
+                                it.isDigit()
+                            }
+                            .take(11)
+
+                    if (numeros.isEmpty()) {
+                        return
+                    }
+
+                    val formatado =
+                        when {
+
+                            numeros.length <= 2 ->
+                                "(${numeros}"
+
+                            numeros.length <= 7 ->
+                                "(${numeros.substring(0, 2)}) " +
+                                    numeros.substring(2)
+
+                            else ->
+                                "(${numeros.substring(0, 2)}) " +
+                                    numeros.substring(2, 7) +
+                                    "-" +
+                                    numeros.substring(7)
+                        }
+
+                    if (formatado != s.toString()) {
+
+                        alterando = true
+
+                        campo.setText(formatado)
+
+                        campo.setSelection(
+                            formatado.length
+                        )
+
+                        alterando = false
+                    }
+                }
+            }
+        )
+    }
+
     private fun salvarAgendamento(
         editar: Agendamento?,
         nome: String,
@@ -362,65 +410,26 @@ class MainActivity : Activity() {
         sinalTexto: String
     ) {
 
-        if (
-            nome.isBlank() ||
-            contato.isBlank() ||
-            data.isBlank() ||
-            horario.isBlank() ||
-            tipo.isBlank() ||
-            valorTexto.isBlank()
-        ) {
-
-            Toast.makeText(
-                this,
-                "Preencha os campos obrigatórios.",
-                Toast.LENGTH_LONG
-            ).show()
-
-            return
-        }
+        /*
+         * NENHUM CAMPO É OBRIGATÓRIO.
+         *
+         * Se a pessoa deixar qualquer campo vazio,
+         * o cadastro será salvo mesmo assim.
+         */
 
         val valor =
-            dinheiro(valorTexto)
+            if (valorTexto.isBlank())
+                0.0
+            else
+                valorTexto.toDoubleOrNull()
+                    ?: 0.0
 
         val sinal =
             if (sinalTexto.isBlank())
                 0.0
             else
-                dinheiro(sinalTexto)
-
-        if (valor == null) {
-
-            Toast.makeText(
-                this,
-                "Digite um valor válido.",
-                Toast.LENGTH_LONG
-            ).show()
-
-            return
-        }
-
-        if (sinal == null) {
-
-            Toast.makeText(
-                this,
-                "Digite um sinal válido.",
-                Toast.LENGTH_LONG
-            ).show()
-
-            return
-        }
-
-        if (sinal > valor) {
-
-            Toast.makeText(
-                this,
-                "O sinal não pode ser maior que o valor.",
-                Toast.LENGTH_LONG
-            ).show()
-
-            return
-        }
+                sinalTexto.toDoubleOrNull()
+                    ?: 0.0
 
         val dados =
             ContentValues()
@@ -466,26 +475,7 @@ class MainActivity : Activity() {
             ).show()
         }
 
-        telaInicial()
-    }
-
-    private fun dinheiro(
-        texto: String
-    ): Double? {
-
-        return try {
-
-            texto
-                .replace("R$", "")
-                .replace(" ", "")
-                .replace(".", "")
-                .replace(",", ".")
-                .toDouble()
-
-        } catch (_: Exception) {
-
-            null
-        }
+        listarAgendamentos()
     }
 
     private fun escolherData(
@@ -586,6 +576,9 @@ class MainActivity : Activity() {
 
             aviso.textSize = 17f
 
+            aviso.gravity =
+                Gravity.CENTER
+
             aviso.setPadding(
                 0,
                 30,
@@ -604,15 +597,20 @@ class MainActivity : Activity() {
                         id =
                             cursor.getLong(0),
                         nome =
-                            cursor.getString(1),
+                            cursor.getString(1)
+                                ?: "",
                         contato =
-                            cursor.getString(2),
+                            cursor.getString(2)
+                                ?: "",
                         data =
-                            cursor.getString(3),
+                            cursor.getString(3)
+                                ?: "",
                         horario =
-                            cursor.getString(4),
+                            cursor.getString(4)
+                                ?: "",
                         tipo =
-                            cursor.getString(5),
+                            cursor.getString(5)
+                                ?: "",
                         observacoes =
                             cursor.getString(6)
                                 ?: "",
@@ -672,21 +670,42 @@ class MainActivity : Activity() {
 
         texto.text =
             """
-            ${agendamento.nome}
+            ${agendamento.nome.ifBlank { "Cliente sem nome" }}
 
-            Contato: ${agendamento.contato}
+            Contato: ${
+                agendamento.contato.ifBlank {
+                    "Não informado"
+                }
+            }
 
-            Data: ${agendamento.data}
-            Horário: ${agendamento.horario}
+            Data: ${
+                agendamento.data.ifBlank {
+                    "Não informada"
+                }
+            }
 
-            Tipo: ${agendamento.tipo}
+            Horário: ${
+                agendamento.horario.ifBlank {
+                    "Não informado"
+                }
+            }
+
+            Tipo: ${
+                agendamento.tipo.ifBlank {
+                    "Não informado"
+                }
+            }
 
             Valor: R$ ${formatar(agendamento.valor)}
             Sinal: R$ ${formatar(agendamento.sinal)}
             Restante: R$ ${formatar(restante)}
 
             Observações:
-            ${agendamento.observacoes}
+            ${
+                agendamento.observacoes.ifBlank {
+                    "Nenhuma"
+                }
+            }
             """.trimIndent()
 
         texto.textSize = 16f
@@ -728,6 +747,9 @@ class MainActivity : Activity() {
             "A parte de entregas será adicionada depois que o cadastro de agendamentos estiver funcionando corretamente."
 
         aviso.textSize = 17f
+
+        aviso.gravity =
+            Gravity.CENTER
 
         aviso.setPadding(
             0,
