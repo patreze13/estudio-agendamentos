@@ -2,25 +2,17 @@ package com.patreze.estudioagendamentos
 
 import android.app.Activity
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.content.ContentValues
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
-import android.graphics.Color
 import android.os.Bundle
 import android.view.Gravity
-import android.view.View
 import android.widget.*
 import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Date
 import java.util.Locale
 import java.util.concurrent.TimeUnit
-
-data class Cliente(
-    val id: Long,
-    val nome: String,
-    val contato: String
-)
 
 data class Agendamento(
     val id: Long,
@@ -28,6 +20,7 @@ data class Agendamento(
     val nomeCliente: String,
     val contato: String,
     val data: String,
+    val horario: String,
     val tipo: String,
     val observacoes: String,
     val valorTotal: Double,
@@ -40,12 +33,13 @@ data class Entrega(
     val agendamentoId: Long,
     val nomeCliente: String,
     val dataEnsaio: String,
+    val horario: String,
     val dataEntrega: String,
     val status: String
 )
 
 class BancoHelper(context: android.content.Context) :
-    SQLiteOpenHelper(context, "estudio_agendamentos.db", null, 1) {
+    SQLiteOpenHelper(context, "estudio_agendamentos.db", null, 2) {
 
     override fun onCreate(db: SQLiteDatabase) {
 
@@ -65,6 +59,7 @@ class BancoHelper(context: android.content.Context) :
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 cliente_id INTEGER NOT NULL,
                 data TEXT NOT NULL,
+                horario TEXT NOT NULL,
                 tipo TEXT NOT NULL,
                 observacoes TEXT,
                 valor_total REAL NOT NULL,
@@ -113,22 +108,31 @@ class MainActivity : Activity() {
         mostrarMenu()
     }
 
-    private fun baseLayout(): LinearLayout {
+    private fun layoutBase(): LinearLayout {
 
-        val layout = LinearLayout(this)
-
-        layout.orientation = LinearLayout.VERTICAL
-        layout.setPadding(32, 32, 32, 32)
-
-        return layout
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(30, 30, 30, 30)
+        }
     }
 
     private fun titulo(texto: String): TextView {
 
         return TextView(this).apply {
             text = texto
-            textSize = 24f
-            setPadding(0, 0, 0, 30)
+            textSize = 25f
+            setPadding(0, 0, 0, 25)
+        }
+    }
+
+    private fun campo(
+        dica: String
+    ): EditText {
+
+        return EditText(this).apply {
+            hint = dica
+            textSize = 16f
+            setPadding(10, 10, 10, 10)
         }
     }
 
@@ -147,12 +151,18 @@ class MainActivity : Activity() {
 
     private fun mostrarMenu() {
 
-        val layout = baseLayout()
+        val layout = layoutBase()
 
         layout.gravity = Gravity.CENTER_HORIZONTAL
 
         layout.addView(
             titulo("ESTÚDIO")
+        )
+
+        layout.addView(
+            botao("NOVO AGENDAMENTO") {
+                novoAgendamento()
+            }
         )
 
         layout.addView(
@@ -167,233 +177,353 @@ class MainActivity : Activity() {
             }
         )
 
-        layout.addView(
-            botao("NOVO AGENDAMENTO") {
-                novoAgendamento()
-            }
-        )
-
         setContentView(layout)
     }
 
     private fun novoAgendamento(
-        agendamentoEditar: Agendamento? = null
+        editar: Agendamento? = null
     ) {
 
-        val layout = baseLayout()
+        val layout = layoutBase()
 
         layout.addView(
             titulo(
-                if (agendamentoEditar == null)
+                if (editar == null)
                     "NOVO AGENDAMENTO"
                 else
                     "EDITAR AGENDAMENTO"
             )
         )
 
-        val nome = EditText(this)
-        nome.hint = "Nome do cliente"
+        val nome = campo(
+            "Nome do cliente"
+        )
 
-        val contato = EditText(this)
-        contato.hint = "Contato"
+        val contato = campo(
+            "Contato / WhatsApp"
+        )
 
-        val data = EditText(this)
-        data.hint = "Data do ensaio"
-        data.isFocusable = false
+        val data = campo(
+            "Data do ensaio — DD/MM/AAAA"
+        )
 
-        val tipo = EditText(this)
-        tipo.hint = "Tipo de ensaio"
+        val horario = campo(
+            "Horário do ensaio — HH:MM"
+        )
 
-        val observacoes = EditText(this)
-        observacoes.hint = "Observações"
+        val tipo = campo(
+            "Tipo de ensaio"
+        )
+
+        val observacoes = campo(
+            "Observações"
+        )
+
         observacoes.minLines = 4
         observacoes.gravity = Gravity.TOP
 
-        val valor = EditText(this)
-        valor.hint = "Valor total"
-        valor.inputType = 8194
+        val valorTotal = campo(
+            "Valor total — exemplo: 300,00"
+        )
 
-        val sinal = EditText(this)
-        sinal.hint = "Valor do sinal (0 se não houver)"
-        sinal.inputType = 8194
+        val sinal = campo(
+            "Valor do sinal — deixe 0 se não houver"
+        )
 
         layout.addView(nome)
         layout.addView(contato)
         layout.addView(data)
+        layout.addView(horario)
         layout.addView(tipo)
         layout.addView(observacoes)
-        layout.addView(valor)
+        layout.addView(valorTotal)
         layout.addView(sinal)
+
+        data.isFocusable = false
+        horario.isFocusable = false
 
         data.setOnClickListener {
             selecionarData(data)
         }
 
-        if (agendamentoEditar != null) {
+        horario.setOnClickListener {
+            selecionarHorario(horario)
+        }
 
-            nome.setText(agendamentoEditar.nomeCliente)
-            contato.setText(agendamentoEditar.contato)
-            data.setText(agendamentoEditar.data)
-            tipo.setText(agendamentoEditar.tipo)
-            observacoes.setText(agendamentoEditar.observacoes)
-            valor.setText(
+        if (editar != null) {
+
+            nome.setText(editar.nomeCliente)
+            contato.setText(editar.contato)
+            data.setText(editar.data)
+            horario.setText(editar.horario)
+            tipo.setText(editar.tipo)
+            observacoes.setText(editar.observacoes)
+
+            valorTotal.setText(
                 String.format(
                     Locale.US,
                     "%.2f",
-                    agendamentoEditar.valorTotal
+                    editar.valorTotal
                 )
             )
+
             sinal.setText(
                 String.format(
                     Locale.US,
                     "%.2f",
-                    agendamentoEditar.sinal
+                    editar.sinal
                 )
             )
+
         } else {
             sinal.setText("0")
         }
 
-        val salvar = botao(
-            if (agendamentoEditar == null)
-                "SALVAR AGENDAMENTO"
-            else
-                "SALVAR ALTERAÇÕES"
-        ) {
-
-            val nomeTexto = nome.text.toString().trim()
-            val contatoTexto = contato.text.toString().trim()
-            val dataTexto = data.text.toString().trim()
-            val tipoTexto = tipo.text.toString().trim()
-            val observacoesTexto =
-                observacoes.text.toString().trim()
-
-            val valorTotal =
-                valor.text.toString()
-                    .replace(",", ".")
-                    .toDoubleOrNull()
-
-            val valorSinal =
-                sinal.text.toString()
-                    .replace(",", ".")
-                    .toDoubleOrNull()
-
-            if (
-                nomeTexto.isBlank() ||
-                contatoTexto.isBlank() ||
-                dataTexto.isBlank() ||
-                tipoTexto.isBlank() ||
-                valorTotal == null ||
-                valorSinal == null
+        layout.addView(
+            botao(
+                if (editar == null)
+                    "SALVAR AGENDAMENTO"
+                else
+                    "SALVAR ALTERAÇÕES"
             ) {
 
-                Toast.makeText(
-                    this,
-                    "Preencha todos os campos obrigatórios.",
-                    Toast.LENGTH_SHORT
-                ).show()
+                val nomeTexto =
+                    nome.text.toString().trim()
 
-                return@botao
-            }
+                val contatoTexto =
+                    contato.text.toString().trim()
 
-            if (valorSinal > valorTotal) {
+                val dataTexto =
+                    data.text.toString().trim()
 
-                Toast.makeText(
-                    this,
-                    "O sinal não pode ser maior que o valor total.",
-                    Toast.LENGTH_SHORT
-                ).show()
+                val horarioTexto =
+                    horario.text.toString().trim()
 
-                return@botao
-            }
+                val tipoTexto =
+                    tipo.text.toString().trim()
 
-            if (agendamentoEditar == null) {
+                val observacoesTexto =
+                    observacoes.text.toString().trim()
 
-                val clienteId =
-                    salvarOuObterCliente(
+                val total =
+                    converterValor(
+                        valorTotal.text.toString()
+                    )
+
+                val valorSinal =
+                    converterValor(
+                        sinal.text.toString()
+                    ) ?: 0.0
+
+                if (
+                    nomeTexto.isBlank() ||
+                    contatoTexto.isBlank() ||
+                    dataTexto.isBlank() ||
+                    horarioTexto.isBlank() ||
+                    tipoTexto.isBlank() ||
+                    total == null
+                ) {
+
+                    Toast.makeText(
+                        this,
+                        "Preencha os campos obrigatórios.",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    return@botao
+                }
+
+                if (valorSinal > total) {
+
+                    Toast.makeText(
+                        this,
+                        "O sinal não pode ser maior que o valor total.",
+                        Toast.LENGTH_LONG
+                    ).show()
+
+                    return@botao
+                }
+
+                if (editar == null) {
+
+                    val clienteId =
+                        salvarOuObterCliente(
+                            nomeTexto,
+                            contatoTexto
+                        )
+
+                    val valores =
+                        ContentValues()
+
+                    valores.put(
+                        "cliente_id",
+                        clienteId
+                    )
+
+                    valores.put(
+                        "data",
+                        dataTexto
+                    )
+
+                    valores.put(
+                        "horario",
+                        horarioTexto
+                    )
+
+                    valores.put(
+                        "tipo",
+                        tipoTexto
+                    )
+
+                    valores.put(
+                        "observacoes",
+                        observacoesTexto
+                    )
+
+                    valores.put(
+                        "valor_total",
+                        total
+                    )
+
+                    valores.put(
+                        "sinal",
+                        valorSinal
+                    )
+
+                    valores.put(
+                        "status",
+                        "Agendado"
+                    )
+
+                    banco.writableDatabase.insert(
+                        "agendamentos",
+                        null,
+                        valores
+                    )
+
+                    Toast.makeText(
+                        this,
+                        "Agendamento salvo com sucesso.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                } else {
+
+                    atualizarCliente(
+                        editar.clienteId,
                         nomeTexto,
                         contatoTexto
                     )
 
-                val valores = ContentValues()
+                    val valores =
+                        ContentValues()
 
-                valores.put("cliente_id", clienteId)
-                valores.put("data", dataTexto)
-                valores.put("tipo", tipoTexto)
-                valores.put(
-                    "observacoes",
-                    observacoesTexto
-                )
-                valores.put("valor_total", valorTotal)
-                valores.put("sinal", valorSinal)
-                valores.put("status", "Agendado")
-
-                banco.writableDatabase.insert(
-                    "agendamentos",
-                    null,
-                    valores
-                )
-
-                Toast.makeText(
-                    this,
-                    "Agendamento salvo.",
-                    Toast.LENGTH_SHORT
-                ).show()
-
-            } else {
-
-                atualizarCliente(
-                    agendamentoEditar.clienteId,
-                    nomeTexto,
-                    contatoTexto
-                )
-
-                val valores = ContentValues()
-
-                valores.put("data", dataTexto)
-                valores.put("tipo", tipoTexto)
-                valores.put(
-                    "observacoes",
-                    observacoesTexto
-                )
-                valores.put("valor_total", valorTotal)
-                valores.put("sinal", valorSinal)
-
-                banco.writableDatabase.update(
-                    "agendamentos",
-                    valores,
-                    "id = ?",
-                    arrayOf(
-                        agendamentoEditar.id.toString()
+                    valores.put(
+                        "data",
+                        dataTexto
                     )
-                )
 
-                Toast.makeText(
-                    this,
-                    "Agendamento atualizado.",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
+                    valores.put(
+                        "horario",
+                        horarioTexto
+                    )
 
-            mostrarMenu()
-        }
+                    valores.put(
+                        "tipo",
+                        tipoTexto
+                    )
 
-        layout.addView(salvar)
+                    valores.put(
+                        "observacoes",
+                        observacoesTexto
+                    )
 
-        layout.addView(
-            botao("VOLTAR") {
+                    valores.put(
+                        "valor_total",
+                        total
+                    )
+
+                    valores.put(
+                        "sinal",
+                        valorSinal
+                    )
+
+                    banco.writableDatabase.update(
+                        "agendamentos",
+                        valores,
+                        "id = ?",
+                        arrayOf(
+                            editar.id.toString()
+                        )
+                    )
+
+                    Toast.makeText(
+                        this,
+                        "Agendamento atualizado.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
                 mostrarMenu()
             }
         )
 
-        setContentView(layout)
+        layout.addView(
+            botao("CANCELAR") {
+                mostrarMenu()
+            }
+        )
+
+        setContentView(
+            ScrollView(this).apply {
+                addView(layout)
+            }
+        )
+    }
+
+    private fun converterValor(
+        texto: String
+    ): Double? {
+
+        val limpo =
+            texto.trim()
+                .replace("R$", "")
+                .replace(" ", "")
+
+        if (limpo.isBlank()) {
+            return null
+        }
+
+        return try {
+
+            if (
+                limpo.contains(",") &&
+                limpo.contains(".")
+            ) {
+
+                limpo
+                    .replace(".", "")
+                    .replace(",", ".")
+                    .toDouble()
+
+            } else {
+
+                limpo
+                    .replace(",", ".")
+                    .toDouble()
+            }
+
+        } catch (_: Exception) {
+            null
+        }
     }
 
     private fun selecionarData(
         campo: EditText
     ) {
 
-        val calendario = Calendar.getInstance()
+        val calendario =
+            Calendar.getInstance()
 
         DatePickerDialog(
             this,
@@ -410,9 +540,46 @@ class MainActivity : Activity() {
                 )
 
             },
-            calendario.get(Calendar.YEAR),
-            calendario.get(Calendar.MONTH),
-            calendario.get(Calendar.DAY_OF_MONTH)
+            calendario.get(
+                Calendar.YEAR
+            ),
+            calendario.get(
+                Calendar.MONTH
+            ),
+            calendario.get(
+                Calendar.DAY_OF_MONTH
+            )
+        ).show()
+    }
+
+    private fun selecionarHorario(
+        campo: EditText
+    ) {
+
+        val calendario =
+            Calendar.getInstance()
+
+        TimePickerDialog(
+            this,
+            { _, hora, minuto ->
+
+                campo.setText(
+                    String.format(
+                        Locale("pt", "BR"),
+                        "%02d:%02d",
+                        hora,
+                        minuto
+                    )
+                )
+
+            },
+            calendario.get(
+                Calendar.HOUR_OF_DAY
+            ),
+            calendario.get(
+                Calendar.MINUTE
+            ),
+            true
         ).show()
     }
 
@@ -421,22 +588,25 @@ class MainActivity : Activity() {
         contato: String
     ): Long {
 
-        val db = banco.writableDatabase
+        val db =
+            banco.writableDatabase
 
-        val cursor = db.query(
-            "clientes",
-            arrayOf("id"),
-            "nome = ? AND contato = ?",
-            arrayOf(nome, contato),
-            null,
-            null,
-            null,
-            "1"
-        )
+        val cursor =
+            db.query(
+                "clientes",
+                arrayOf("id"),
+                "nome = ? AND contato = ?",
+                arrayOf(nome, contato),
+                null,
+                null,
+                null,
+                "1"
+            )
 
         if (cursor.moveToFirst()) {
 
-            val id = cursor.getLong(0)
+            val id =
+                cursor.getLong(0)
 
             cursor.close()
 
@@ -445,10 +615,18 @@ class MainActivity : Activity() {
 
         cursor.close()
 
-        val valores = ContentValues()
+        val valores =
+            ContentValues()
 
-        valores.put("nome", nome)
-        valores.put("contato", contato)
+        valores.put(
+            "nome",
+            nome
+        )
+
+        valores.put(
+            "contato",
+            contato
+        )
 
         return db.insert(
             "clientes",
@@ -463,10 +641,18 @@ class MainActivity : Activity() {
         contato: String
     ) {
 
-        val valores = ContentValues()
+        val valores =
+            ContentValues()
 
-        valores.put("nome", nome)
-        valores.put("contato", contato)
+        valores.put(
+            "nome",
+            nome
+        )
+
+        valores.put(
+            "contato",
+            contato
+        )
 
         banco.writableDatabase.update(
             "clientes",
@@ -478,18 +664,18 @@ class MainActivity : Activity() {
 
     private fun listarAgendamentos() {
 
-        val layout = baseLayout()
+        val layout =
+            layoutBase()
 
         layout.addView(
             titulo("AGENDAMENTOS")
         )
 
-        val adicionar =
+        layout.addView(
             botao("NOVO AGENDAMENTO") {
                 novoAgendamento()
             }
-
-        layout.addView(adicionar)
+        )
 
         val cursor =
             banco.readableDatabase.rawQuery(
@@ -500,6 +686,7 @@ class MainActivity : Activity() {
                     c.nome,
                     c.contato,
                     a.data,
+                    a.horario,
                     a.tipo,
                     a.observacoes,
                     a.valor_total,
@@ -508,16 +695,27 @@ class MainActivity : Activity() {
                 FROM agendamentos a
                 INNER JOIN clientes c
                     ON c.id = a.cliente_id
-                ORDER BY a.data
+                ORDER BY
+                    a.data ASC,
+                    a.horario ASC
                 """.trimIndent(),
                 null
             )
 
         if (!cursor.moveToFirst()) {
 
-            val vazio = TextView(this)
-            vazio.text = "Nenhum agendamento cadastrado."
-            vazio.setPadding(0, 30, 0, 30)
+            val vazio =
+                TextView(this)
+
+            vazio.text =
+                "Nenhum agendamento cadastrado."
+
+            vazio.setPadding(
+                0,
+                30,
+                0,
+                30
+            )
 
             layout.addView(vazio)
 
@@ -532,11 +730,16 @@ class MainActivity : Activity() {
                         nomeCliente = cursor.getString(2),
                         contato = cursor.getString(3),
                         data = cursor.getString(4),
-                        tipo = cursor.getString(5),
-                        observacoes = cursor.getString(6) ?: "",
-                        valorTotal = cursor.getDouble(7),
-                        sinal = cursor.getDouble(8),
-                        status = cursor.getString(9)
+                        horario = cursor.getString(5),
+                        tipo = cursor.getString(6),
+                        observacoes =
+                            cursor.getString(7) ?: "",
+                        valorTotal =
+                            cursor.getDouble(8),
+                        sinal =
+                            cursor.getDouble(9),
+                        status =
+                            cursor.getString(10)
                     )
 
                 layout.addView(
@@ -567,18 +770,25 @@ class MainActivity : Activity() {
         agendamento: Agendamento
     ): LinearLayout {
 
-        val card = LinearLayout(this)
+        val card =
+            LinearLayout(this)
 
         card.orientation =
             LinearLayout.VERTICAL
 
-        card.setPadding(0, 20, 0, 20)
+        card.setPadding(
+            0,
+            20,
+            0,
+            20
+        )
 
         val restante =
             agendamento.valorTotal -
                 agendamento.sinal
 
-        val texto = TextView(this)
+        val texto =
+            TextView(this)
 
         texto.text =
             """
@@ -586,28 +796,23 @@ class MainActivity : Activity() {
             ${agendamento.contato}
 
             Data: ${agendamento.data}
+            Horário: ${agendamento.horario}
             Tipo: ${agendamento.tipo}
 
-            Valor: R$ ${
-                String.format(
-                    Locale("pt", "BR"),
-                    "%.2f",
+            Valor total: R$ ${
+                formatarDinheiro(
                     agendamento.valorTotal
                 )
             }
 
             Sinal: R$ ${
-                String.format(
-                    Locale("pt", "BR"),
-                    "%.2f",
+                formatarDinheiro(
                     agendamento.sinal
                 )
             }
 
             Restante: R$ ${
-                String.format(
-                    Locale("pt", "BR"),
-                    "%.2f",
+                formatarDinheiro(
                     restante
                 )
             }
@@ -624,36 +829,53 @@ class MainActivity : Activity() {
 
         card.addView(
             botao("EDITAR / REAGENDAR") {
-                novoAgendamento(agendamento)
+                novoAgendamento(
+                    agendamento
+                )
             }
         )
 
-        card.addView(
-            botao("MARCAR COMO REALIZADO") {
+        if (agendamento.status != "Realizado") {
 
-                val valores = ContentValues()
+            card.addView(
+                botao("MARCAR COMO REALIZADO") {
 
-                valores.put(
-                    "status",
-                    "Realizado"
-                )
-
-                banco.writableDatabase.update(
-                    "agendamentos",
-                    valores,
-                    "id = ?",
-                    arrayOf(
-                        agendamento.id.toString()
+                    marcarComoRealizado(
+                        agendamento
                     )
-                )
 
-                criarEntrega(agendamento)
-
-                listarAgendamentos()
-            }
-        )
+                    listarAgendamentos()
+                }
+            )
+        }
 
         return card
+    }
+
+    private fun marcarComoRealizado(
+        agendamento: Agendamento
+    ) {
+
+        val valores =
+            ContentValues()
+
+        valores.put(
+            "status",
+            "Realizado"
+        )
+
+        banco.writableDatabase.update(
+            "agendamentos",
+            valores,
+            "id = ?",
+            arrayOf(
+                agendamento.id.toString()
+            )
+        )
+
+        criarEntrega(
+            agendamento
+        )
     }
 
     private fun criarEntrega(
@@ -672,7 +894,8 @@ class MainActivity : Activity() {
                 )
             )
 
-        val jaExiste = existente.moveToFirst()
+        val jaExiste =
+            existente.moveToFirst()
 
         existente.close()
 
@@ -680,53 +903,52 @@ class MainActivity : Activity() {
             return
         }
 
-        val calendario = Calendar.getInstance()
-
-        // Prazo padrão inicial: 7 dias após o ensaio.
-        // Poderemos transformar isso em configuração posteriormente.
         try {
 
             val dataEnsaio =
                 formatoData.parse(
                     agendamento.data
+                ) ?: return
+
+            val calendario =
+                Calendar.getInstance()
+
+            calendario.time =
+                dataEnsaio
+
+            calendario.add(
+                Calendar.DAY_OF_MONTH,
+                7
+            )
+
+            val dataEntrega =
+                formatoData.format(
+                    calendario.time
                 )
 
-            if (dataEnsaio != null) {
+            val valores =
+                ContentValues()
 
-                calendario.time = dataEnsaio
-                calendario.add(
-                    Calendar.DAY_OF_MONTH,
-                    7
-                )
+            valores.put(
+                "agendamento_id",
+                agendamento.id
+            )
 
-                val dataEntrega =
-                    formatoData.format(
-                        calendario.time
-                    )
+            valores.put(
+                "data_entrega",
+                dataEntrega
+            )
 
-                val valores = ContentValues()
+            valores.put(
+                "status",
+                "Aguardando tratamento"
+            )
 
-                valores.put(
-                    "agendamento_id",
-                    agendamento.id
-                )
-
-                valores.put(
-                    "data_entrega",
-                    dataEntrega
-                )
-
-                valores.put(
-                    "status",
-                    "Aguardando tratamento"
-                )
-
-                banco.writableDatabase.insert(
-                    "entregas",
-                    null,
-                    valores
-                )
-            }
+            banco.writableDatabase.insert(
+                "entregas",
+                null,
+                valores
+            )
 
         } catch (_: Exception) {
         }
@@ -734,7 +956,8 @@ class MainActivity : Activity() {
 
     private fun listarEntregas() {
 
-        val layout = baseLayout()
+        val layout =
+            layoutBase()
 
         layout.addView(
             titulo("ENTREGAS")
@@ -748,6 +971,7 @@ class MainActivity : Activity() {
                     e.agendamento_id,
                     c.nome,
                     a.data,
+                    a.horario,
                     e.data_entrega,
                     e.status
                 FROM entregas e
@@ -755,14 +979,15 @@ class MainActivity : Activity() {
                     ON a.id = e.agendamento_id
                 INNER JOIN clientes c
                     ON c.id = a.cliente_id
-                ORDER BY e.data_entrega
+                ORDER BY e.data_entrega ASC
                 """.trimIndent(),
                 null
             )
 
         if (!cursor.moveToFirst()) {
 
-            val vazio = TextView(this)
+            val vazio =
+                TextView(this)
 
             vazio.text =
                 "Nenhuma entrega cadastrada."
@@ -783,11 +1008,18 @@ class MainActivity : Activity() {
                 val entrega =
                     Entrega(
                         id = cursor.getLong(0),
-                        agendamentoId = cursor.getLong(1),
-                        nomeCliente = cursor.getString(2),
-                        dataEnsaio = cursor.getString(3),
-                        dataEntrega = cursor.getString(4),
-                        status = cursor.getString(5)
+                        agendamentoId =
+                            cursor.getLong(1),
+                        nomeCliente =
+                            cursor.getString(2),
+                        dataEnsaio =
+                            cursor.getString(3),
+                        horario =
+                            cursor.getString(4),
+                        dataEntrega =
+                            cursor.getString(5),
+                        status =
+                            cursor.getString(6)
                     )
 
                 layout.addView(
@@ -818,7 +1050,8 @@ class MainActivity : Activity() {
         entrega: Entrega
     ): LinearLayout {
 
-        val card = LinearLayout(this)
+        val card =
+            LinearLayout(this)
 
         card.orientation =
             LinearLayout.VERTICAL
@@ -837,33 +1070,38 @@ class MainActivity : Activity() {
 
         val indicador =
             when {
+
                 entrega.status == "Entregue" ->
                     "ENTREGUE"
 
-                dias < 0 ->
+                dias < 0L ->
                     "ATRASADA — ${-dias} dia(s)"
 
                 dias == 0L ->
                     "VENCE HOJE"
 
-                dias <= 2 ->
+                dias <= 2L ->
                     "PRAZO VENCENDO — $dias dia(s)"
 
-                dias <= 4 ->
+                dias <= 4L ->
                     "PRAZO PRÓXIMO — $dias dia(s)"
 
                 else ->
                     "PRAZO CONFORTÁVEL — $dias dia(s)"
             }
 
-        val texto = TextView(this)
+        val texto =
+            TextView(this)
 
         texto.text =
             """
             ${entrega.nomeCliente}
 
             Ensaio: ${entrega.dataEnsaio}
-            Entrega: ${entrega.dataEntrega}
+            Horário: ${entrega.horario}
+
+            Data limite:
+            ${entrega.dataEntrega}
 
             $indicador
 
@@ -873,6 +1111,15 @@ class MainActivity : Activity() {
         texto.textSize = 16f
 
         card.addView(texto)
+
+        card.addView(
+            botao("ALTERAR DATA DE ENTREGA") {
+
+                selecionarNovaDataEntrega(
+                    entrega
+                )
+            }
+        )
 
         if (entrega.status != "Entregue") {
 
@@ -916,12 +1163,69 @@ class MainActivity : Activity() {
         return card
     }
 
+    private fun selecionarNovaDataEntrega(
+        entrega: Entrega
+    ) {
+
+        val calendario =
+            Calendar.getInstance()
+
+        try {
+
+            calendario.time =
+                formatoData.parse(
+                    entrega.dataEntrega
+                ) ?: calendario.time
+
+        } catch (_: Exception) {
+        }
+
+        DatePickerDialog(
+            this,
+            { _, ano, mes, dia ->
+
+                val novaData =
+                    String.format(
+                        Locale("pt", "BR"),
+                        "%02d/%02d/%04d",
+                        dia,
+                        mes + 1,
+                        ano
+                    )
+
+                val valores =
+                    ContentValues()
+
+                valores.put(
+                    "data_entrega",
+                    novaData
+                )
+
+                banco.writableDatabase.update(
+                    "entregas",
+                    valores,
+                    "id = ?",
+                    arrayOf(
+                        entrega.id.toString()
+                    )
+                )
+
+                listarEntregas()
+
+            },
+            calendario.get(Calendar.YEAR),
+            calendario.get(Calendar.MONTH),
+            calendario.get(Calendar.DAY_OF_MONTH)
+        ).show()
+    }
+
     private fun alterarStatusEntrega(
         id: Long,
         status: String
     ) {
 
-        val valores = ContentValues()
+        val valores =
+            ContentValues()
 
         valores.put(
             "status",
@@ -932,7 +1236,9 @@ class MainActivity : Activity() {
             "entregas",
             valores,
             "id = ?",
-            arrayOf(id.toString())
+            arrayOf(
+                id.toString()
+            )
         )
 
         listarEntregas()
@@ -947,7 +1253,7 @@ class MainActivity : Activity() {
             val data =
                 formatoData.parse(
                     dataEntrega
-                ) ?: return 0
+                ) ?: return 0L
 
             val hoje =
                 Calendar.getInstance()
@@ -957,7 +1263,8 @@ class MainActivity : Activity() {
             val entrega =
                 Calendar.getInstance()
 
-            entrega.time = data
+            entrega.time =
+                data
 
             zerarHorario(entrega)
 
@@ -967,28 +1274,44 @@ class MainActivity : Activity() {
             )
 
         } catch (_: Exception) {
-            0
+
+            0L
         }
     }
 
     private fun zerarHorario(
         calendario: Calendar
     ) {
+
         calendario.set(
             Calendar.HOUR_OF_DAY,
             0
         )
+
         calendario.set(
             Calendar.MINUTE,
             0
         )
+
         calendario.set(
             Calendar.SECOND,
             0
         )
+
         calendario.set(
             Calendar.MILLISECOND,
             0
+        )
+    }
+
+    private fun formatarDinheiro(
+        valor: Double
+    ): String {
+
+        return String.format(
+            Locale("pt", "BR"),
+            "%.2f",
+            valor
         )
     }
 }
